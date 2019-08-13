@@ -1,0 +1,136 @@
+1、主配置文件：/etc/my.cnf
+	数据库目录：/var/lib/mysql
+	默认端口号：3306
+	进程名：mysqld
+	传输协议：tcp
+	进程所有者：mysql
+	进程所属组：mysql
+	错误日志文件：/var/log/mysqld.log
+
+2、安装mysql数据库：
+	tar -xf mysql-5.7.17.tar
+	yum -y install *.rpm
+
+3、查看随机生成的密码
+	grep 'temporary password'  /var/log/mysqld.log
+
+4、登陆mysql：
+	mysql  -hlocalhost  -uroot  -p'密码'	##密码默认策略是1，需要满足长度/数字/小写/大写/特殊字符
+	-h：指定登陆的主机
+	-u：指定登陆的用户
+	-p：指定登陆的密码
+
+5、修改root密码：
+	alter  user  root@"localhost"  identified  by  "123qqq...A";
+
+6、修改密码策略：
+	显示mysql上变量的值：show  variables  like "%password%";
+	like：模糊查询
+	临时修改密码策略：set  global  validate_password_policy=0;	##为0的时候只检查长度
+	临时修改密码长度：set  global  validate_password_length=6;	##密码长度要满足6位
+
+	alter  user  root@"localhost"  identified  by  "123456";
+	exit
+
+	mysql  -hlocalhost  -uroot  -p123456 
+	永久配置：vim  /etc/my.cnf
+		[mysqld]
+		validate_password_policy=0
+		validate_password_length=6
+
+7、sql命令分类：
+	DDL 数据定义语言：create、alter、drop
+	DML 数据操作语言：insert、update、delete
+	DCL 数据控制语言：grant、revoke
+	DTL 数据事物语言：commit、rollback、savepoint（保存点，记录标记操作位置的，利用它可以回滚指定部分事务）
+
+8、库的管理命令：
+	显示已有的库：show databases;
+	显示连接用户：show user();
+	切换库：use 库名；
+	显示当前所在库：select database();
+	创建新库：create database 库名；
+	显示已有的表：show tables;
+	删除库：drop database 库名；
+
+9、表的管理命令：
+	查看表记录：select * from 库名.表名;
+	插入表记录：insert into 库名.表名 values(值列表);
+	修改表记录：update 库名.表名 set 字段=值；
+	删除表记录：delete from 表名;
+	查看表结构：desc 库名.表名；
+	删除表：drop table 库名.表名；
+	
+10、让数据库支持中文：
+	locale			##显示当前系统的语言
+	LANG="zh_CN.UTF-8"	
+让表支持中文：
+	create table 表名(字段名 数据类型) default charset=utf8；
+
+
+
+11、字符型
+	char字符：
+		最大存储255个字符
+		数据不够字符个数时，会自动在右边用空格补全
+
+	varchar字符：
+		最大存储65534个字符
+		按数据实际大小分配存储空间
+
+12、整数型：
+	tinyint	  微小整数	  -128~127	  0~255
+	samallint	  小整数	  -32768~32767	  0~65534
+	mediumint  中整型	  -2(23)~2(23)-1	  0~2(24)-1
+	int	   大整型	  -2(31)~2(31)-1	  0~2(32)-1
+	bigint	   极大整型  -2(63)~2(63)-1	  0~2(64)-1
+	unsigned	   使用无符号存储范围 (相当于把负数全部变成正数，增加正数的范围)
+
+13、浮点型：
+	float	单精度	0~2(32)-1
+	double	双精度	0~2(64)-1
+	格式：字段名  类型；或  字段名  类型（总宽度，小数位数）
+
+14、日期时间类型：
+	datetime	格式：yyyymmddhhmmss	##日期时间（无值则默认为null）
+	timestamp       格式：yyyymmddhhmmss	##日期时间（无值默认系统时间）
+	date		格式：yyyymmdd		##日期
+	year		格式：yyyy		##年
+	time		格式：HH:MM:SS		##时间
+
+	时间函数：
+		curtime()		##获取当前的系统时间
+		curdate()		##获取当前的系统日期
+		now()			##获取当前系统日期和时间
+
+		year()		##获取年
+		month()		##获取月
+		day()		##获取天
+		date()		##获取日期
+		time()		##获取时间
+
+15、枚举类型：
+	enum 单选：
+		格式：字段名  enum(值1，值2)
+		仅能选择列表内的一个值
+
+	set 多选：
+		格式：字段名  set(值1，值2，值N)
+		选择列表内一个或多个值
+
+	mysql> create table db1.t5 (
+    	-> name char(5),
+   	 -> likes set("eat","game","film","music"),
+   	 -> sex   enum("boy","girl","no")
+	
+	mysql> insert into db1.t5 values ("bob","eat,film,game","boy");
+
+	
+	
+
+
+	
+
+
+
+
