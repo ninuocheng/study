@@ -1,0 +1,159 @@
+﻿早自习默写
+1.IP地址的分类及范围？
+2.子网掩码的作用？
+3.网关的作用？ 
+4.ABC类IP地址默认子网掩码是？
+
+一、Linux系统简介
+1.什么是Linux?
+Linux是一种操作系统，主要用在企业服务器上面
+2.Linux系统内核
+版本号:主版本.次版本.修订号
+3.RedHat系列版本
+– Red Hat Enterprise Linux（RHEL） 5/6/7/8
+– CentOS
+– Fedora Core社区版
+
+二、安装Linux系统
+1.Linux 一切皆文件
+  Linux严格区分大小写
+2.建议内存2G以上
+3.Linux磁盘表示
+/dev/xdy
+/dev	表示/dev目录
+xd	hd	ide接口硬盘
+	sd	非ide接口硬盘（SATA、SCSI）
+	vd	虚拟机磁盘
+y	a	第一块硬盘
+	b	第二块硬盘
+	c	第三块硬盘
+	...
+/dev/hdb		第二块IDE接口的硬盘
+/dev/vda3	第一块虚拟磁盘第三个分区
+/dev/sdd1	第四块非IDE接口的第一个分区
+
+
+
+4.Linux管理员 root
+5.Ctrl + Alt = 鼠标回到真机
+6.目录结构
+/	Linux文件系统的起点，所有Linux数据全部存放在/下
+/dev	存放设备相关的
+/root	管理员的家目录
+/home	普通用户的家目录
+
+
+三、命令行基本操作
+1.Linux虚拟控制台
+tty1 ~ tty6
+tty1 		图形
+tty2~tty6	字符
+切换：
+图形切换到字符	ctrl+alt+(F2~F6)
+字符之间切换	alt+(F2~F6)
+字符到图形	alt+F1
+2.Linux命令行提示符
+[登录用户@主机名 工作目录] 身份标识
+# 代表管理员
+$ 代表普通用户
+3.Linux基本命令
+# pwd		//显示当前工作目录
+# cd		//切换路径
+# cd .		//当前不变
+# cd ..		//返回上一层目录
+# cd ../..	//返回上一层的上一层
+# cd -		//返回上一次工作目录
+# cd ~ = cd 	//进入当前用户家目录
+绝对路径：以/开始的路径
+相对路径：不以/开始的路径
+eg:
+[student@room9pc01 home]$ cd
+[student@room9pc01 ~]$ pwd
+/home/student
+[student@room9pc01 ~]$ cd .
+[student@room9pc01 ~]$ pwd
+/home/student
+[student@room9pc01 ~]$ cd ..
+[student@room9pc01 home]$ pwd
+/home
+[student@room9pc01 home]$ cd -
+/home/student
+[student@room9pc01 ~]$ pwd
+/home/student
+[student@room9pc01 ~]$ cd ../..
+[student@room9pc01 /]$ pwd
+/
+
+# ls		//列出目录内容/文件权限
+# cat		//查看文件内容
+eg:
+[student@room9pc01 /]$ cd
+[student@room9pc01 ~]$ pwd
+/home/student
+[student@room9pc01 ~]$ ls
+[student@room9pc01 ~]$ cd /etc/redhat-release 
+-bash: cd: /etc/redhat-release: 不是目录
+[student@room9pc01 ~]$ cat /etc/redhat-release 
+CentOS Linux release 7.5.1804 (Core) 
+
+# lscpu		//查看cpu信息
+# cat /proc/meminfo	//查看内存信息
+eg:
+[student@room9pc01 ~]$ lscpu 
+[student@room9pc01 ~]$ cat /proc/meminfo
+		16:10  -  16:30
+# hostname		//查看主机名
+# ifconfig		//查看ip地址
+# mkdir			//创建目录
+# touch			//创建文件
+eg:
+[student@room9pc01 ~]$ hostname
+[student@room9pc01 ~]$ ifconfig
+[student@room9pc01 ~]$ ls /tmp/
+[student@room9pc01 ~]$ mkdir /tmp/vod
+[student@room9pc01 ~]$ ls /tmp/
+vod
+[student@room9pc01 ~]$ ls /tmp/
+vod
+[student@room9pc01 ~]$ touch /tmp/nsd1907.txt
+[student@room9pc01 ~]$ ls /tmp/
+nsd1907.txt  vod
+
+# less			//查看大文件内容分屏查看
+# head			//默认查看文件头10行
+# tail			//默认查看文件尾10行
+# grep			//过滤包含关键字的行
+# nmtui			//配置网络参数（ip地址、子网掩码、网关、dns、主机名）
+# poweroff		//关机
+# reboot		//重启
+
+# cd /root
+# cd root	
+5.编辑命令或路径的技巧：　Tab可以进行补全       
+# if(tab)(tab)
+if         ifdown     ifup
+ifcfg      ifenslave  
+ifconfig   ifstat     
+# ifco(tab)
+# cat /et(tab)/red(tab)
+CentOS Linux release 7.5.1804 (Core)
+# ls /etc/sysconfig/network-scripts/ifcfg-eth0 
+# ls /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+
+补充: Linux下的颜色
+蓝色 --> 目录
+红色 --> 压缩文件
+绿色 --> 可执行文件
+
+课外作业：
+1. 为什么计算机的时间是从1970年1月1开始?
+https://mixer-b.iteye.com/blog/1563869
+2.C语言之父
+3. 什么是Linux?
+4. 如何破解Linux密码?
+5.
+
+
+
+
+

@@ -1,0 +1,124 @@
+1、切换命令行视图
+	ststem-view   	##进入系统视图
+	interface  E/G	##进入接口视图
+	return/Ctrl + z	##返回用户视图
+	ctrl + ] 		##退出系统
+
+2、交换机配置及查看
+	sysname  名字		##修改交换机主机名
+	undo  
+	display  version		##查看系统版本,硬件型号等信息
+	display  current-configuration	##查看设备详细配置信息
+	display  mac-address		##查看mac地址表
+	display  ip  interface  brief	##查看所有配置过的ip
+	display  vlan		##查看vlan配置信息
+	display  this		##查看当前所在视图配置
+	clear configuration interface Ethernet  接口	##清除接口配置
+	undo terminal monitor	##关闭信息提示避免干扰
+
+3、设置设备的账户密码
+	aaa					##进入3a认证，此视图支持用户的创建
+	local-user  用户名  password  密码显示格式   密码	##创建账户和密码
+	quit
+	user-interface  console  0			##进入控制台接口视图
+	authentication-mode  aaa			##激活配置
+	ctrl + ] 					##退出系统测试	
+4、保存配置及恢复出厂配置
+	save
+	reset  saved-configuration	##重置配置
+		y		##选择擦除
+	reboot
+		n		##不保存配置
+		y		##选择重启
+
+5、划分VLAN，配置trunk（实现同VLAN主机的通信及实现跨交换机的同VLAN通信）
+	access	##接入链路，承载1个vlan,通常在链接了终端设备(PC)的接口配置
+	trunk  	##中继链路  ，承载多个vlan,通常在两台交换机之间的链路配置
+
+	vlan batch 2 3/vlan 2			##两种创建vlan的方式
+	port-group  1			##创建接口组1
+	group-member  E0/0/1  to  E0/0/3	##将1、2、3接口加入1号组
+	port  link-type  access		##设置接口类型
+	port  default  vlan  2			##将这组接口加入vlan2
+
+	port  link-type  trunk		##设置接口类型为trunk
+	port  trunk  allow-pass  vlan  all	##允许所有vlan
+
+6、配置链路聚合（通过接口互联实现高可用）
+	interface  Eth-trunk  1		##创建1号链路聚合接口
+	trunkport  ethernet  0/0/1  0/0/02	##将1口2口加入1号并捆绑在一起
+
+7、三层交换机配置（既是交换也是路由）
+	interface  Vlanif  1			##进入vlan1虚拟接口
+	ip  address  192.168.1.254  24		##为vlan1口配置虚拟IP
+	interface  Vlanif  2			##进入vlan2虚拟接口
+	ip  address  192.168.2.254  24		##为vlan2口配置虚拟IP
+	interface  Ethernet0/0/1
+	port link-type access
+	port default vlan 1			##将1口加入vlan1
+	interface  Ethernet0/0/2
+	port link-type access
+	port default vlan 2			##将2口加入vlan2
+
+8、配置静态路由（实现不同网段通信）
+	interface  G0/0/0 
+	ip  address 192.168.1.254  24			##给路由器G0/0/0口配置IP，子网掩码是255.255.255.0
+	ip  route-static  目标网络网段  子网掩码   下一跳IP	##配置静态路由
+
+下一跳IP：IP包所经由的下一个路由器
+
+直连路由：直连路由是连接的直接路由，优先级是最高的，配置好IP就能自动获取路由表信息
+静态路由：由网络管理员在路由器上手工输入路由信息以实现路由的目的，适用于小型网络
+默认路由：又叫缺省路由，是一种特殊的静态路由
+动态路由：路由器能够根据路由器之间的交换的特定路由信息自动地建立自己的路由表，并实时更新自动调整，适用于大型网络
+
+9、配置动态路由（通过告知其他设备自身所连接的网段，实现不同网段通信）
+	ospf  1				##ospf进程号，协议视图
+	area  0				##进入区域0，小规模网络只需要一个区域,且必须从0开始
+
+	network  192.168.1.0  0.0.0.255		##宣告自己所在网段
+	network  192.168.2.0  0.0.0.255		##宣告自己所在网段
+
+10、基本ACL和高级ACL
+	基本ACL：使用IP地址等来定义规则，编号范围为2000～2999
+	高级ACL：TCP/UDP等来定义规则，编号范围为3000～3999
+	TCP：面向连接，可靠，但速度慢，相当于打电话
+	UDP：非面向连接，不可靠，但速度快，相当于发短信
+
+	acl  2000				##定义规则编号
+	rule  deny  source  192.168.2.1 0	##acl规则内容，拒绝192.168.2.1这个ip
+	interface  GigabitEthernet  0/0/1	
+	traffic-filter  inbound  acl  2000		##在0/0/1接口设置acl访问控制
+	
+	acl 3000				##定义规则编号
+	rule deny tcp source 192.168.2.1 0 destination 192.168.1.1 0 destination-port eq 21		##acl规则内容，拒绝192.168.2.1访问192.168.1.1的ftp服务
+	rule deny tcp source 192.168.2.2 0 destination 192.168.1.1 0 destination-port eq 80		##acl规则内容，拒绝192.168.2.2访问192.168.1.1的http服务
+	interface g0/0/1			
+	traffic-filter inbound acl 3000		##应用在0/0/1接口
+
+11、静态NAT（实现外部网络访问，1对1，一个内网机器使用一个公网IP访问外部）
+	interface GigabitEthernet 0/0/0
+	nat  static  global  外网地址  inside  私有内部地址	##私有地址通过地址转换成为公网地址后再去访问外网
+
+12、Easy IP（实现外部网络访问，多对1，通过随机生成的临时端口号实现多个内网机器使用一个公网IP访问外部）
+	acl  2000    
+	rule  permit  source  any     		##使用acl定义允许访问外部网络的设备，这里全部允许
+	interface  g0/0/0
+	nat  outbound  2000    		##进入接口开启nat，最后让所有人通过g0/0/0这一个接口的IP访问外网
+
+13、STP生成树协议（在环形网络中避免广播风暴，在智能交换机中stp默认是开启的）
+	undo  stp  enable		##关闭STP生成树协议
+		y		##确定关闭，然后测试
+	
+	作用：1）消除环路：在逻辑上断开环路。 
+	          2）链路备份：当活动链路发生故障时，激活备份链路，保证网络的连通性
+
+14、配置VRRP（路由热备份）
+	interface  G0/0/0
+	vrrp  vrid  1  virtual-ip  虚拟网关地址	##配置路由虚拟网关地址
+	vrrp  vrid  1  priority  优先级别		##设置优先级	
+	
+	
+
+
+	

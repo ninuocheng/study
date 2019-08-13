@@ -1,0 +1,15 @@
+1、配置DNS需要装什么软件包，请列出软件包名称？
+2、DNS主配置文件和地址库文件地址分别在什么路径？
+3、cp地址库文件和主配置文件时需要注意什么？
+4、简述DNS地址记录中类型NS记录和A记录的含义？
+5、请写出$GENERATE的作用以及语法格式？
+6、请写出CNAME的作用以及语法格式？
+7、轮询解析，新建两台虚拟机pc51（192.168.4.100）和pc52（192.168.4.52），配置好ip和主机名，在pc51上为站点www.163.com提供DNS轮询解析，然后在客户端pc52上通过nslookup测试结果？ 
+8、子域授权，在pc51上搭建DNS服务，为站点www.baidu.cn配置域名解析，在pc52上搭建DNS服务，为站点www.sz.baidu.cn配置域名解析，最后将www.sz.baidu.cn配置为www.baidu.cn的子域，通过pc51也能解析pc52的www.sz.baidu.cn？
+9、分离解析，配置5台虚拟机pc51（192.168.4.51）、pc52（192.168.4.52）、web1（192.168.4.110）、web2（192.168.4.120）、web3（192.168.4.200），使用DNS分离解析，完成当pc51访问www.tedu.cn和www.sina.com时，由web1提供页面，当pc52访问www.tedu.cn和www.sina.com时，由web2提供页面，当两者都不是的时候，由web3提供www.tedu.cn和www.sina.com的页面？
+10、什么是PXE网络？
+12、搭建PXE需要哪些服务组件，每个组件的作用是什么？
+13、tftp服务默认的共享路径是什么？
+14、搭建PXE过程中，pxelinux.0、pxelinux.cfg、splash.png、vesamenu.c32、initrd.img、vmlinuz以上文件分别是什么？
+15、使用kickstart生成应答文件时，yum仓库的配置需要注意什么？
+16、新建一台虚拟机，将实验再做一遍，实现PXE网络自动装机，并自动搭建yum？

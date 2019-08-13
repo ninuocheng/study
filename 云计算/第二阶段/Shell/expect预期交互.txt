@@ -1,0 +1,51 @@
+字串截取的三种用法：
+${变量名:起始位置:长度}			##下标从0开始
+expr substr "$变量名" 起始位置 长度		##下标从1开始
+echo $变量名 | cut -b 起始位置-结束位置		##下标从1开始
+
+字串替换的两种用法：
+只替换第一个匹配结果：${变量名/old/new}
+替换全部匹配结果：${变量名//old/new}
+
+字符串掐头去尾：
+从左向右，最短匹配删除：${变量名#*关键词}
+从左向右，最长匹配删除：${变量名##*关键词}
+从右向左，最短匹配删除：${变量名%关键词*}
+从右向左，最长匹配删除：${变量名%%关键词*}
+
+
+expect预期交互，实现自动交互
+1）安装expect工具
+	yum  -y  install  expect  
+	which expect 
+
+2）需求分析：ssh远程实现免交互登陆
+	如果SSH登录并不是第一次，接受密钥的环节就没了，而是直接进入验证密码的过程
+
+3）编写脚本
+[root@pc50 ~]# vim  expect_ssh.sh 
+#!/bin/bash
+expect << EOF			#调用expect软件，<<EOF限定一个范围，从什么地方开始，在什么地方结束
+spawn ssh 192.168.4.51                              #//创建交互式进程，spawn带表要干的事
+expect "password:" { send "123456\r" }      #//自动发送密码
+expect "#" { send "touch /tmp/1.txt\r" }     #//发送命令
+expect "#" { send "exit\r" }
+EOF
+
+
+#!/bin/bash
+for i in 10 11                                        #注意IP根据实际情况填写
+do
+expect << EOF			
+spawn ssh 192.168.4.$i                               #//创建交互式进程
+expect "password:" { send "123456\r" }              #//自动发送密码
+expect "#"          { send "touch /tmp.txt\r" }      #//发送命令
+expect "#"          { send "exit\r" }
+expect "#"          { send "exit\r" }
+EOF
+done
+
+注意事项：
+expect脚本的最后一行默认不执行
+如果不希望ssh时出现yes/no的提示，远程时使用如下选项:
+	# ssh -o StrictHostKeyChecking=no server0

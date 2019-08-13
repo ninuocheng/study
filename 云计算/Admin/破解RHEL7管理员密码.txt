@@ -1,0 +1,12 @@
+1）重启虚拟机 server，出现 GRUB 启动菜单时按 e 键进入编辑状态
+
+2）找到 linux16 所在行，末尾添加 rd.break console=tty0，按 Ctrl+x 键进恢复模式
+
+3）以可写方式挂载硬盘中的根目录，并重设 root 密码：
+
+switch_root:/# mount -o remount,rw /sysroot   ##根为/sysroot/，只有readonl只读权限，所以要以读写方式重新挂载根系统
+switch_root:/# chroot /sysroot/ 	        ##切换到根系统
+sh-4.2# passwd root 		 	        ##设置密码
+sh-4.2# touch /.autorelabel 		        ##标记下一次启动重做 SELinux 标签（selinux标签验证,告诉selinux我没经过你的允许，修改了管理员的密码，在selinux这里备个案，即允许你修改密码）
+sh-4.2# exit			        ##退出
+switch_root:/# reboot		        ##重启之后输入root修改后的密码进入系统
