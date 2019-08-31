@@ -1,0 +1,80 @@
+1、表结构约束条件：
+	查看约束条件：desc 库名.表名；
+	设置约束条件：null		##允许为空
+		       not null		##不允许为null（空）
+		       key		##键值类型
+		       default		##设置默认值，缺省为null
+		       extra		##额外设置
+		create table db1.t1(
+			name char(10) not null,
+			age tinyint unsigned default 19,
+			class char(7) not null default "nsd1905",
+			pay float(7,2) default 28000
+			);
+2、修改表结构：
+	用法：alter table 库名.表名 执行动作；
+	add	##添加字段
+		alter table 库名.表名 add 字段名 类型（宽度） 约束条件 [after 字段名 | first ];
+
+	modify	##修改字段类型（仅修改类型约束）
+		alter table 库名.表名 modify 字段名 类型（宽度） 约束条件 [after 字段名 | first ];
+
+	change	##修改字段名（修改字段名的同时可以修改类型约束）
+		alter table 库名.表名 change 原字段名 新字段名 类型（宽度） 约束条件 [after 字段名 | first ];
+
+	drop	##删除字段
+		alter table 库名.表名 drop 字段名；
+
+	rename	##修改表名
+		alter table 表名 rename 新表名；
+
+3、键值类型：
+	1）index		##普通索引（一个表中可以有多个，字段值允许重复，可以为null，标志是MUL）
+		建表时创建索引：create table 库名.表名(字段名1 类型，字段名2 类型，index(字段名1)，index(字段名2))；
+
+		已有表创建索引：create index 索引名 on 表名(字段名)；
+
+		删除索引：drop index 索引名 on 表名；
+
+		查看索引信息：show index from 表名 \G；	##\G代表换行
+
+	2）unique		##唯一索引，不允许有重复值，比如身份证，银行账号
+
+	3）fulltext		##全文索引，适合在进行模糊查询的时候使用
+
+	4）parimary key  	##主键（不允许重复，不允许为null，一个表只能有一个primary key字段，标志是PRI）
+		建表时创建主键：create table 库名.表名(ID primary key auto_incremen，name char(10));	
+	
+		已有表添加主键：alter table 表名 add primary key(字段名);
+
+		删除主键：alter table 表名 drop primary key;
+
+		创建复合主键：
+			建表时创建：create table 表名(
+					id int,
+					name char(10),
+					age int,
+					primary key(id,name)
+				   );
+			在已有表创建复合主键：alter table 表名 add primary key(字段名列表);	##复合主键需要一起添加，插入值的时候，值不能同时重复
+		
+		auto_incremen：代表字段自增长，一般用于ID字段
+			create table 库名.表名(
+				ID primary key auto_incremen，
+				name char(10)
+			);	
+
+			重置自增长初值为1：delete from 库名.表名；
+					alter table 库名.表名 auto_increment=1;
+
+	5）foreign key	##外键（插入记录时，字段值在另一个表字段值范围内选择，必须是innodb存储引擎，字段类型要一致，不能为空值，并且要唯一，被参照字段必须是索引类型的一种，一般是主键）
+		创建外键：create table 表名(
+				字段名列表，
+				foreign key(本表字段名) references 表名(参考表字段名) 
+				on update cascade 				##与参考表同步更新
+				on delete cascade				##与参考表同步删除
+			)engine=innodb;
+
+		删除外键：alter table 表名 drop foreign key 外键名；
+		
+		查看表的创建语句：show create table 表名；
