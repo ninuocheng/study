@@ -1,0 +1,315 @@
+                                          
+环境的准备：
+1.防火墙默认区域设置为trusted
+虚拟机server
+[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+虚拟机desktrop
+[root@desktrop0 ~]# firewall-cmd --set-default-zone=trusted
+
+#######################################################
+数据库服务基础
+
+一、部署mariadb数据库服务器，默认端口：3306     
+• RHEL7 中的 MariaDB 相关包
+– mariadb-server:提供服务端有关的系统程序
+
+[root@server0 ~]# yum -y install mariadb-server
+[root@server0 ~]# systemctl restart mariadb
+
+二、数据库的基本操作
+[root@server0 ~]# mysql        #进入数据库
+MariaDB [(none)]> show databases;      #查看所有的数据库
+MariaDB [(none)]> create database nsd;  #创建nsd库
+
+MariaDB [(none)]> show databases;
+
+MariaDB [(none)]> exit
+Bye
+
+
+####################################################
+三、数据库的导出/导入操作
+• 导入/恢复到数据库
+– mysql [-u用户名] [-p[密码]] 数据库名 < 备份文件.sql
+
+[root@server0 ~]# wget http://classroom.example.com/pub/materials/users.sql
+
+[root@server0 ~]# ls
+
+]# mysql -u root   nsd  < /root/users.sql 
+]# mysql -u root 
+MariaDB [(none)]> use nsd;
+MariaDB [nsd]> show tables;
+
+####################################################
+案例. 在系统 server0 上使用数据库 nsd,对base与location两张表进行查询，回答下列问题:
+1)密码是 solicitous 的人的名字?
+]# mysql -u root 
+> use nsd;
+> select * from base;
+> select * from base where password='solicitous';
+> select * from base where id='4';
+
+2)有多少人的姓名是 Barbara同时居住在 Sunnyvale?(联合多表查询)
+> select  *  from   base,location           
+  where  base.name='Barbara'   and              
+   location.city='Sunnyvale'   and              
+   base.id=location.id;
+
+> select  count(*)  from  base,location   
+  where  base.name='Barbara'   and              
+   location.city='Sunnyvale'   and              
+   base.id=location.id;
+
+> insert base values('6','Barbara','789');  #插入新的记录
+> select * from base;
+
+> insert location values('6','Sunnyvale');  #插入新的记录
+> select * from location;
+######################################################
+
+
+普通NFS服务
+NFS共享概述
+• Network File System,网络文件系统
+– 用途:为客户机提供共享使用的文件夹
+– 协议:NFS(TCP/UDP 2049)、RPC(TCP/UDP 111)
+
+虚拟机server：
+1.安装nfs-utils软件包
+[root@server0 ~]# rpm -q nfs-utils
+nfs-utils-1.3.0-0.el7.x86_64
+
+2.建立共享文件夹
+[root@server0 ~]# mkdir /public
+[root@server0 ~]# echo 123 > /public/1.txt
+[root@server0 ~]# ls /public/
+
+[root@server0 ~]# touch /public/{2..5}.txt
+[root@server0 ~]# ls /public/
+
+3.修改配置文件/etc/exports
+– 文件夹路径   客户机地址(权限)   客户机地址(权限) .. ..
+[root@server0 ~]# vim  /etc/exports 
+ /public    *(ro)
+
+
+4.重起nfs-server服务
+[root@server0 ~]# systemctl restart nfs-server
+
+虚拟机desktop：客户端
+1.利用挂载方式进行访问共享
+]# mkdir /mnt/nsd
+]# showmount -e 172.25.0.11   #查看服务端共享路径
+
+]# mount 172.25.0.11:/public  /mnt/nsd/
+]# df -h          #查看正在挂载使用信息
+]# ls /mnt/nsd
+
+挂载NFS共享格式：mount  服务器IP地址:共享路径   本地挂载点
+
+2.开机自动挂载/etc/fstab               
+    _netdev:网络设备
+                      开机启动时，在确保自己网络服务完成后，在挂载本设备
+
+[root@desktop0 /]# vim /etc/fstab 
+172.25.0.11:/public /mnt/nsd  nfs  defaults,_netdev  0 0
+
+[root@desktop0 /]# umount /mnt/nsd
+[root@desktop0 /]# df -h
+[root@desktop0 /]# mount -a 
+[root@desktop0 /]# df -h
+
+#######################################################
+独立Web主机
+
+Web通信基本概念
+• 基于 B/S (Browser/Server)架构的网页服务
+– 服务端提供网页
+– 浏览器下载并显示网页
+
+• Hyper Text Markup Language（html）,超文本标记语言
+• Hyper Text Transfer Protocol（http）,超文本传输协议
+
+构建Web服务器的软件：httpd  Nginx  Tomcat
+
+  httpd（Apache软件基金会）
+
+虚拟机server：
+1.安装httpd软件
+[root@server0 ~]# yum -y install httpd
+
+2.重起httpd服务
+[root@server0 ~]# systemctl restart httpd
+
+3.书写页面文件
+]# echo '<h1>NSD1908'  >  /var/www/html/index.html
+]# firefox  172.25.0.11
+
+
+• 软件包:httpd
+• 系统服务:httpd
+
+• 提供的默认配置
+– Listen:监听地址:端口(80)
+– ServerName:本站点注册的DNS名称(空缺)
+– DocumentRoot:网页根目录(/var/www/html)
+– DirectoryIndex:起始页/首页文件名(index.html)
+
+   DNS服务器：虚拟机classroom
+        www0.example.com-------->172.25.0.11
+        server0.example.com-------->172.25.0.11
+        webapp0.example.com-------->172.25.0.11
+
+测试DNS解析：
+[root@server0 ~]# nslookup www0.example.com
+[root@server0 ~]# nslookup server0.example.com
+[root@server0 ~]# nslookup webapp0.example.com
+
+
+#####################################################
+– DocumentRoot:网页文件根目录(/var/www/html)
+
+虚拟机server：
+1.创建新的网页文件目录
+]# mkdir /var/www/myweb
+]# echo '<h1>wo shi myweb' > /var/www/myweb/index.html
+2.修改配置文件
+]# vim /etc/httpd/conf/httpd.conf 
+
+ DocumentRoot  "/var/www/myweb"   #指定新的网页文件存放路径
+
+3.重起httpd服务
+]# systemctl restart httpd
+
+4.测试验证
+]# firefox  172.25.0.11
+
+#######################################################
+• 配置文件路径
+– /etc/httpd/conf/httpd.conf   #主配置文件
+– /etc/httpd/conf.d/*.conf     #调用配置文件
+
+    配置后应用的生效
+
+####################################################
+网络路径与实际路径
+
+客户端 firefox 172.25.0.11：80--------》服务端172.25.0.11 ：80--------------》httpd程序接受-----》配置文件DocumentRoot 网页文件的路径   /var/www/myweb------> /var/www/myweb/index.html
+
+
+– DocumentRoot:网页文件根目录   网页文件起始点
+
+
+网络路径：客户端在浏览器输入的路径           
+实际路径：服务端网页文件存放的路径
+
+客户端：firefox  172.25.0.11 = /var/www/myweb
+服务端：/var/www/myweb/
+
+客户端：firefox  172.25.0.11/abc
+服务端：/var/www/myweb/abc/
+
+DocumentRoot /var/www/myweb
+客户端：firefox  172.25.0.11/var/www/myweb/abc/nsd
+服务端：/var/www/myweb/var/www/myweb/abc/nsd
+
+虚拟机server：
+]# mkdir  /var/www/myweb/abc/
+]# echo '<h1>wo shi ABC' > /var/www/myweb/abc/index.html
+]# firefox 172.25.0.11/abc
+
+######################################################
+虚拟Web主机
+
+虚拟主机的含义及类型
+• 虚拟Web主机
+– 由同一台服务器提供多个不同的Web站点
+
+• 区分方式
+– 基于域名的虚拟主机
+– 基于端口的虚拟主机
+– 基于IP地址的虚拟主机
+
+   DNS服务器：虚拟机classroom
+        www0.example.com-------->172.25.0.11
+        server0.example.com-------->172.25.0.11
+        webapp0.example.com-------->172.25.0.11
+
+虚拟Web配置
+ <VirtualHost IP地址:端口>
+   ServerName 此站点的DNS名称
+   DocumentRoot 此站点的网页根目录
+ </VirtualHost>
+
+
+虚拟机server：                           
+[root@server0 ~]# mkdir /var/www/qq
+[root@server0 ~]# mkdir /var/www/baidu
+[root@server0 ~]# echo '<h1>企鹅' > /var/www/qq/index.html
+[root@server0 ~]# echo '<h1>百度' > /var/www/baidu/index.html
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd01.conf
+<VirtualHost    *:80>         #在本机所有IP地址启用虚拟Web主机
+  ServerName  www0.example.com   #指定本网站域名
+  DocumentRoot  /var/www/qq      #指定网页文件存放路径
+</VirtualHost>
+
+<VirtualHost    *:80>          
+  ServerName  webapp0.example.com
+  DocumentRoot  /var/www/baidu
+</VirtualHost>
+[root@server0 ~]# systemctl restart httpd
+
+ 如果使用IP地址直接访问，那么会直接显示第一个虚拟Web主机功能
+
+ 一旦使用虚拟Web主机功能，那么所有的页面都要使用虚拟Web主机功能呈现
+
+[root@server0 ~]# vim  /etc/httpd/conf.d/nsd01.conf
+<VirtualHost    *:80>
+  ServerName  www0.example.com
+  DocumentRoot  /var/www/qq
+</VirtualHost>
+<VirtualHost    *:80>
+  ServerName  webapp0.example.com
+  DocumentRoot  /var/www/baidu
+</VirtualHost>
+<VirtualHost    *:80>
+  ServerName  server0.example.com
+  DocumentRoot  /var/www/myweb
+</VirtualHost>
+[root@server0 ~]# systemctl restart httpd
+
+#####################################################
+
+1.httpd软件访问控制，默认情况下只允许访问/var/www路径下的页面文件
+2.SELinux策略影响网页文件存放的路径
+
+#####################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

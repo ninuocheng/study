@@ -1,0 +1,354 @@
+                                          
+环境的准备：
+1.防火墙默认区域设置为trusted
+虚拟机server
+[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+虚拟机desktrop
+[root@desktrop0 ~]# firewall-cmd --set-default-zone=trusted
+
+######################################################
+案例:为虚拟机 server 配置以下虚拟Web主机
+- 实现三个网站的部署
+- 实现客户端访问server0.example.com网页内容为 卖女孩的小火柴
+- 实现客户端访问www0.example.com网页内容为  奔跑吧骆驼
+- 实现客户端访问webapp0.example.com网页内容为 20里春风不如你
+
+虚拟机server：
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd01.conf
+<VirtualHost   *:80>
+ ServerName  server0.example.com
+ DocumentRoot   /var/www/abc01
+</VirtualHost>
+<VirtualHost   *:80>
+ ServerName  www0.example.com
+ DocumentRoot   /var/www/abc02
+</VirtualHost>
+<VirtualHost   *:80>
+ ServerName  webapp0.example.com
+ DocumentRoot   /var/www/abc03
+</VirtualHost>
+]# mkdir /var/www/abc01  /var/www/abc02  /var/www/abc03
+]# echo '<h1>卖女孩的小火柴'  >  /var/www/abc01/index.html
+]# echo '<h1>奔跑吧骆驼'  >   /var/www/abc02/index.html
+]# echo '<h1>无数里春风不如你'   >  /var/www/abc03/index.html
+]# systemctl restart httpd
+
+######################################################
+网页内容访问，针对存放网页文件的路径
+
+客户机地址限制
+• 使用 <Directory> 配置区段
+– 每个文件夹自动继承其父目录的ACL访问权限
+– 除非针对子目录有明确设置
+
+	<Directory 目录的绝对路径>
+	  .. ..
+	 Require all denied|granted
+	 Require ip IP或网段地址 .. ..
+	</Directory>
+
+	<Directory /opt>      #针对存放网页文件的路径/opt
+      Require all denied  #拒绝所有人访问
+	</Directory>
+
+       /opt/nsd/abc/index.html   #拒绝所有人访问
+
+
+
+#####################################################
+案例1:配置网页内容访问                                         
+在 Web 网站 http://server0.example.com 的
+DocumentRoot目录下创建一个名为 private 的子目录,要求如下:
+
+1.查看server0.example.com 的DocumentRoot 目录
+[root@server0 /]# cat /etc/httpd/conf.d/nsd01.conf 
+2.创建子目录
+[root@server0 /]# mkdir /var/www/abc01/private
+3.书写一个页面文件 
+]# echo '<h1>wo shi private' > /var/www/abc01/private/index.html
+
+4.两台机器上，测试访问
+]# firefox server0.example.com/private
+
+5.从 虚拟机server0 上,任何人都可以浏览 private 的内容,
+但是从其他系统不能访问这个目录的内容
+[root@server0 ~]# vim /etc/httpd/conf/httpd.conf
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd02.conf 
+<Directory   "/var/www/abc01/private">  #针对网页文件目录
+    Require ip 172.25.0.11      #仅允许的172.25.0.11访问
+</Directory>
+[root@server0 ~]# systemctl restart httpd
+
+虚拟机desktop上测试访问
+[root@desktop0 ~]# firefox server0.example.com/private
+Forbidden
+
+You don't have permission to access /private/ on this server.
+
+#####################################################
+案例:使用自定Web根目录
+调整 Web 站点 http://server0.example.com 的网页目录,要求如下:
+虚拟机server0：
+1.新建目录 /webroot,作为此站点新的网页目录            
+]# mkdir /webroot
+]# echo '<h1>wo shi Webroot' > /webroot/index.html
+2.修改配置文件
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd01.conf
+<VirtualHost   *:80>
+ ServerName   server0.example.com
+ DocumentRoot  /webroot     #修改网页文件存放路径
+</VirtualHost>
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd02.conf 
+<Directory   "/webroot">    #修改针对/webroot路径
+    Require all granted     #允许所有客户端访问
+</Directory>
+[root@server0 ~]# systemctl restart httpd
+[root@server0 ~]# setenforce 0  #当前临时修改SELinux状态
+[root@server0 ~]# getenforce    #查看SELinux状态为宽松模式
+Permissive
+
+3.修改SELinux的策略：安全上下文   布尔值    非默认端口的开放
+
+安全上下文：标签起到一定标识作用
+
+[root@server0 ~]# setenforce 1   #临时设置为强制模式
+[root@server0 ~]# getenforce 
+
+]# semanage --help
+]# semanage fcontext -l  |  less   #查看当前系统所有的安全上下文
+]# ls -Zd  /var/www/   #查看目录的安全上下文
+]# ls -Zd  /webroot/
+• 方式1:参照标准目录,重设新目录的属性
+– chcon [-R]  --reference=模板目录   新目录
+]# chcon -R --reference=/var/www  /webroot/  #修改安全上下文
+]# ls -Zd  /webroot/
+
+#####################################################
+部署动态网站
+
+静态网站的运行
+• 服务端的原始网页 = 浏览器访问到的网页
+– 由Web服务软件处理所有请求
+– 文本(txt/html)、图片(jpg/png)等静态资源
+
+动态网站
+• 服务端的原始网页 ≠ 浏览器访问到的网页
+–  由Web服务软件接受请求,动态程序转后端模块处理
+– PHP网页、Python网页、JSP网页......
+
+虚拟机server：
+1.新建一个动态站点(虚拟主机)
+– 站点名称为 webapp0.example.com部署Python网页文件
+]# cat /etc/httpd/conf.d/nsd01.conf
+]# cd /var/www/abc03/
+]# wget  http://classroom.example.com/pub/materials/webinfo.wsgi
+
+]# ls
+
+2.方便客户端的访问
+
+firefox webapp0.example.com  =  /var/www/abc03/webinfo.wsgi
+
+ 页面跳转： Alias   网络路径       实际路径
+
+[root@server0 /]# vim /etc/httpd/conf.d/nsd01.conf 
+<VirtualHost   *:80>
+ ServerName  webapp0.example.com
+ DocumentRoot /var/www/abc03
+ Alias   /    /var/www/abc03/webinfo.wsgi
+     当客户端浏览器直接访问网页文件根目录时，呈现/var/www/abc03/webinfo.wsgi页面内容
+</VirtualHost>
+
+[root@server0 /]# systemctl  restart  httpd
+
+3.安装支持Python页面的代码翻译的软件
+[root@server0 /]# yum -y install mod_wsgi
+
+4.修改配置文件完成翻译Python页面的代码
+[root@server0 /]# vim /etc/httpd/conf.d/nsd01.conf 
+<VirtualHost   *:80>
+ ServerName  webapp0.example.com
+ DocumentRoot /var/www/abc03
+ WsgiScriptAlias   /  /var/www/abc03/webinfo.wsgi
+
+</VirtualHost>
+[root@server0 ~]# systemctl restart httpd
+
+[root@desktop0 ~]# firefox webapp0.example.com
+
+页面内容为：
+  UNIX时间戳：从1970-1-1   0:0:0到达现在时间，所经历的秒数
+
+5.此虚拟主机侦听在端口8909                        
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd01.conf 
+Listen 8909              #设置httpd程序监听的端口
+<VirtualHost    *:8909>   #虚拟Web主机监听使用的端口
+ ServerName  webapp0.example.com
+ DocumentRoot /var/www/abc03
+ WsgiScriptAlias /  /var/www/abc03/webinfo.wsgi
+</VirtualHost>
+
+6.修改SELinux策略，非默认端口的开放
+]# setenforce 1
+]# getenforce 
+]# semanage port -l | grep http
+]# semanage port -a -t http_port_t -p tcp 8909
+     -a:添加    -t：类型    -p：协议
+]# systemctl restart httpd
+]# firefox webapp0.example.com:8909
+####################################################
+安全Web服务，https安全超文本传输协议   默认端口：443
+
+• Public Key Infrastructure,公钥基础设施
+– 公钥:主要用来加密数据
+– 私钥:主要用来解密数据(与相应的公钥匹配)
+– 数字证书:证明拥有者的合法性/权威性(单位名称、
+有效期、公钥、颁发机构及签名、......)
+– Certificate Authority,数字证书授权中心:负责证书
+的申请/审核/颁发/鉴定/撤销等管理工作
+
+
+虚拟机server：构建安全的Web服务          
+1.部署网站证书（营业执照）
+]# cd /etc/pki/tls/certs/
+]# wget http://classroom.example.com/pub/tls/certs/server0.crt
+]# ls
+
+2.部署根证书（工商局信息）
+]# cd /etc/pki/tls/certs/
+]# wget http://classroom.example.com/pub/example-ca.crt
+]# ls
+
+3.部署用于解密的私钥
+]# cd /etc/pki/tls/private/
+]# wget http://classroom.example.com/pub/tls/private/server0.key
+]# ls
+
+4.安装mod_ssl可以支持https软件
+[root@server0 /]# yum -y install mod_ssl
+[root@server0 /]# ls /etc/httpd/conf.d/
+
+5.修改配置文件
+[root@server0 /]# vim /etc/httpd/conf.d/ssl.conf
+在末行模式下：set  nu  #开启行号功能
+
+ 59 DocumentRoot "/var/www/abc02"
+ 60 ServerName www0.example.com:443
+指定网站证书
+100 SSLCertificateFile /etc/pki/tls/certs/server0.crt
+
+指定解密的密钥文件
+107 SSLCertificateKeyFile /etc/pki/tls/private/server0.key
+
+指定根证书
+122 SSLCACertificateFile /etc/pki/tls/certs/example-ca.crt
+
+6.重起httpd服务
+[root@server0 /]# systemctl restart httpd
+[root@server0 /]# firefox https://www0.example.com
+点击--->"我已了解可能的风险"--->"添加例外"--->"确认安全例外"
+
+#######################################################
+补充内容：Samba共享服务（Windows与Linux之间的共享）
+
+                反向编译思想
+
+        smb协议：Windows与Linux之间通信协议
+
+虚拟机server：                            
+1.安装软件包
+[root@server0 /]# yum -y install samba
+
+2.Samba共享账户:建立专门用于Samba共享验证的用户
+     必须建立在系统本地用户的基础上
+     密码采用samba独立管理，不同于系统登陆的密码
+[root@server0 /]# useradd  tom
+[root@server0 /]# pdbedit  -a  tom  #将普通用户添加为共享账户
+new password:
+retype new password:
+
+[root@server0 /]# pdbedit -L  #查看当前系统的所有共享账户
+
+3.修改配置文件
+   共享名：专门给客户端访问共享时看到的名字
+   目录名：实际名
+[root@server0 /]# mkdir /public
+[root@server0 /]# echo haha  > /public/smb.txt
+[root@server0 /]# vim /etc/samba/smb.conf
+ [共享名]
+ path = 实际共享目录的路径
+ vim文本编辑器命令模式下：  G（大写）到全文的最后一行
+
+ [pub]
+ path = /public
+
+[root@server0 /]# systemctl restart smb
+
+4.修改SELinux策略，布尔值（功能的开关）
+]# getsebool -a | grep samba         #查看所有的SELinux布尔值
+]# setsebool samba_export_all_ro on  #修改SELinux布尔值
+]# getsebool -a | grep samba         #查看所有的SELinux布尔值
+
+虚拟机desktop:
+1.安装cifs-utils软件包，支持挂载samba共享的软件
+]# yum -y install cifs-utils
+
+2.进行挂载访问
+]# mkdir /mnt/nsd
+]# mount -o user=tom,pass=123  //172.25.0.11/pub  /mnt/nsd
+]# df -h   #查看当前正在挂载的设备
+
+挂载格式：
+  mount -o user=验证用户,pass=密码   //Samba服务端地址/共享名    本机目录路径
+#######################################################
+#######################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

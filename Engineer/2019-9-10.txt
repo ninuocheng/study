@@ -1,0 +1,256 @@
+######################################################
+虚拟机server：构建基本Web服务
+
+ Web服务：提供一个页面的内容服务
+ httpd软件  Nginx软件   Tomcat软件
+
+ http协议:超文本传输协议
+
+1.安装提供Web服务的软件
+[root@server0 ~]# yum -y install httpd
+2.重起httpd程序（服务）
+[root@server0 ~]# systemctl restart httpd
+[root@server0 ~]# systemctl enable httpd
+3.书写一个页面文件
+   默认读取页面文件的路径：/var/www/html
+   默认识别的首页文件名称：index.html
+   书写页面内容的语言：html
+[root@server0 ~]# echo '<h1>NSD1908 hahaXIXI' > /var/www/html/index.html
+[root@server0 ~]# cat /var/www/html/index.html
+[root@server0 ~]# firefox 172.25.0.11
+
+######################################################
+防火墙策略管理
+  作用：隔离      严格过滤入站，允许出站
+  
+  硬件防火墙
+  软件防火墙
+
+firewalld服务基础
+• 系统服务:firewalld
+• 管理工具:firewall-cmd、firewall-config
+
+预设安全区域
+• 根据所在的网络场所区分,预设保护规则集
+– public:仅允许访问本机的sshd dhcp ping个服务
+– trusted:允许任何访问
+– block:阻塞任何来访请求(明确拒绝，给客户端回应)
+– drop:丢弃任何来访的数据包(直接丢弃，不给客户端回应，节省服务器资源)
+
+防火墙判定规则：首先查看数据包中，源IP地址
+1.查看所有区域规则，那个区域有该源IP地址的规则，则进入该区域
+2.进入默认区域public
+
+####################################################
+防火墙默认区域的修改：
+虚拟机server：
+]# firewall-cmd --get-default-zone        #查看默认区域
+]# firewall-cmd --zone=public --list-all  #查看区域规则
+虚拟机desktop
+]# firefox 172.25.0.11       #失败
+
+虚拟机server：
+]# firewall-cmd --zone=public  --add-service=http #添加协议
+]# firewall-cmd --zone=public  --list-all 
+虚拟机desktop
+]# firefox 172.25.0.11       #成功
+
+######################################################
+
+端口：编号标识协议或程序                                             
+ 数据包：  源IP地址     目标IP地址   数据   目标端口
+
+   http协议默认端口为80
+   ftp协议默认端为21
+
+实现本机的端口映射（端口转发）
+• 本地应用的端口重定向(端口1 --> 端口2)
+– 从客户机访问 端口5423的请求,自动映射到本机 端口80
+– 比如,访问以下两个地址可以看到相同的页面:
+  http://172.25.0.11:5423/
+  http://172.25.0.11
+
+虚拟机server
+]# firewall-cmd  --zone=public
+   --add-forward-port=port=5423:proto=tcp:toport=80
+                                        #端口为5423 协议为tcp协议  转发到80端口
+
+]# firewall-cmd --zone=public --list-all 
+
+虚拟机desktop
+[root@desktop0 ~]# firefox  172.25.0.11：5423
+
+######################################################
+了解内容：添加源IP地址的策略
+单独拒绝虚拟机desktop访问本机的所有服务
+]# firewall-cmd --zone=block --list-all 
+]# firewall-cmd --zone=block --add-source=172.25.0.10
+]# firewall-cmd --zone=block --list-all 
+
+#######################################################
+ 常见互联网协议
+        http：超文本传输协议  默认端口为80
+        https：安全的超文本传输协议  默认端口为443
+        ftp：文本传输协议  默认端口为21
+        ssh：远程管理协议(加密传输)  默认端口为22
+        telnet：远程管理协议(明文传输)  默认端口为23
+        tftp：简单的文本传输协议  默认端口为69
+        DNS：域名解析协议  默认端口为53
+        smtp：邮件协议（用户发邮件协议）  默认端口为25
+        pop3：邮件协议（用户收邮件协议）  默认端口为110
+        snmp：简单网络管理协议    默认端口为161
+
+#######################################################
+交换空间（虚拟内存）：当物理内存不够用的时候，可以将物理内存中，暂时不用户的数据，放入到交换空间中，缓解真实物理内存的压力
+
+ 利用硬盘的空间，来充当内存来使用
+
+
+1.划分新的分区：2个主分区大小均为2G
+[root@server0 ~]# fdisk /dev/vdb 
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +2G
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +2G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# lsblk
+[root@server0 ~]# ls /dev/vdb[1-2]  #查看设备文件
+
+2.格式化交互文件系统（swap）         
+[root@server0 ~]# mkswap /dev/vdb1 #格式化交换文件系统
+[root@server0 ~]# mkswap /dev/vdb2
+
+[root@server0 ~]# blkid /dev/vdb1  #查看文件系统类型
+[root@server0 ~]# blkid /dev/vdb2  
+
+3.启用交换分区
+[root@server0 ~]# swapon -s         #查看交换空间状态
+[root@server0 ~]# swapon /dev/vdb1  #启用交换分区
+[root@server0 ~]# swapon /dev/vdb2
+[root@server0 ~]# swapon -s
+
+[root@server0 ~]# swapoff /dev/vdb2  #停用交换分区
+[root@server0 ~]# swapoff /dev/vdb1
+[root@server0 ~]# swapon -s
+
+4.设置开机自动启用交换分区
+[root@server0 ~]# vim /etc/fstab 
+/dev/vdb1   swap   swap   defaults  0 0
+/dev/vdb2   swap   swap   defaults  0 0
+
+[root@server0 ~]# swapon -s
+[root@server0 ~]# swapon -a  #专用于检测交换分区的命令
+[root@server0 ~]# swapon -s
+
+
+
+###################################################
+了解内容：
+使用LDAP服务器,实现网络用户认证,达到用户的集中管理
+
+     网络用户:用户信息会放在网络中LDAP服务器
+     本地用户:用户信息会放在/etc/passwd
+
+
+LDAP服务器:虚拟机classroom
+
+客户端:虚拟机server
+1.安装sssd软件,与LDAP服务器沟通
+[root@server0 /]# yum -y install sssd
+[root@server0 /]# rpm -q sssd
+
+2.安装authconfig-gtk图形的工具,进行配置客户端sssd软件
+[root@server0 /]# yum -y install authconfig-gtk
+[root@server0 /]# authconfig-gtk
+
+完全合格的主机名  www.baidu.com　　　www.qq.com    
+               classroom.example.com
+
+     选择LDAP
+      dc=example,dc=com             #指定服务端域名
+      classroom.example.com         #指定服务端主机名
+     勾选TLS加密
+      使用证书加密:
+     http://classroom.example.com/pub/example-ca.crt
+
+     选择LDAP密码 
+
+3.重起服务
+[root@server0 ~]# systemctl  restart  sssd   #重起服务
+[root@server0 ~]# systemctl  enable  sssd    #设置开机自启动
+[root@server0 ~]# grep ldapuser0 /etc/passwd
+[root@server0 ~]# id ldapuser0     #验证LDAP用户信息
+          
+###################################################   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
