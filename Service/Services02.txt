@@ -1,0 +1,298 @@
+一、建立具备图形系统的虚拟机
+
+1.新建虚拟机，选择光盘进行安装
+2.内存2G
+3.虚拟机名字：nsd01
+4.虚拟机网络类型为：private1隔离网络
+5.选择“中文”
+6.软件包选择：带GUI的服务器
+7.分区选择：自动分区
+8.设置root密码，建立普通用户lisi
+
+
+################################################
+虚拟化概述
+• virtualization 资源管理
+– x个物理资源 --> y个逻辑资源
+– 实现程度:完全、部分、硬件辅助(CPU)
+
+真机:查看CPU是否支持虚拟化功能
+[student@room9pc01 ~]$ lscpu | grep vmx
+
+
+虚拟化概述(续1)
+• 虚拟化主要厂商及产品
+	VMware    VMware Workstation、vSphere
+	Microsoft VirtualPC、Hyper-V
+	RedHat    KVM、RHEV
+	Citrix    Xen
+	Oracle    Oracle VM VirtualBox
+
+
+二、虚拟机nsd01操作
+
+1、配置IP地址：192.168.4.100/24        
+
+[root@localhost ~]# nmcli connection modify eth0       ipv4.method manual ipv4.addresses 192.168.4.100/24   connection.autoconnect yes
+
+[root@localhost ~]# nmcli connection up eth0 
+
+[root@localhost ~]# ifconfig | head -2
+
+  虚拟机网络类型为：private1隔离网络
+
+2.设置永久的主机名
+[root@localhost ~]# hostname kvm.tedu.cn
+[root@localhost ~]# echo kvm.tedu.cn > /etc/hostname
+[root@localhost ~]# exit
+登出
+Connection to 192.168.4.100 closed.
+[student@room9pc01 ~]$ ssh -X  root@192.168.4.100
+root@192.168.4.100's password: 
+[root@kvm ~]# 
+
+3.修改SELinux状态为宽松模式
+[root@kvm ~]# getenforce 
+Enforcing
+[root@kvm ~]# setenforce 0    #临时修改SELinux状态
+[root@kvm ~]# getenforce 
+Permissive
+[root@kvm ~]# vim /etc/selinux/config   #永久修改
+SELINUX=permissive
+
+4.修改防火墙默认区域
+[root@kvm ~]# firewall-cmd --set-default-zone=trusted 
+
+5.构建Yum仓库
+[root@kvm ~]# cd /etc/yum.repos.d/
+[root@kvm yum.repos.d]# mkdir  repo
+[root@kvm yum.repos.d]# mv  *.repo   repo
+[root@kvm yum.repos.d]# ls
+[root@kvm yum.repos.d]# vim  nsd.repo
+ [nsd]
+ name=nsd1908
+ baseurl=ftp://192.168.4.254/centos-1804
+ enabled=1
+ gpgcheck=0
+
+[root@kvm yum.repos.d]# yum repolist 
+[root@kvm yum.repos.d]# yum -y install xeyes
+
+
+安装虚拟化服务器平台
+• 主要软件包
+ – qemu-kvm:为 kvm 提供底层仿真支持
+ – libvirt-daemon:libvirtd 守护进程,管理虚拟机
+ – libvirt-client:用户端软件,提供客户端管理命令
+ – libvirt-daemon-driver-qemu:libvirtd 连接 qemu 的驱动
+ – virt-manager:图形管理工具
+
+]# yum -y install  qemu-kvm
+]# yum -y install  libvirt-daemon
+]# yum -y install  libvirt-client
+]# yum -y install  libvirt-daemon-driver-qemu
+]# yum -y install  virt-manager
+
+###################################################
+真机：利用命令进行管理虚拟机
+virsh命令工具介绍
+
+• 查看KVM节点(服务器)信息                       
+]$ virsh nodeinfo
+• 列出虚拟机
+]$ virsh list --all
+• 查看指定虚拟机的信息
+– virsh dominfo 虚拟机名称
+
+]$ virsh autostart nsd01            #设置开机自动启动
+]$ virsh dominfo nsd01              #查看nsd01虚拟机信息
+]$ virsh autostart --disable nsd01  #设置禁止开机自动启动
+]$ virsh dominfo nsd01
+
+• 运行|重启|关闭指定的虚拟机
+– virsh start  虚拟机名称
+• 强制关闭指定的虚拟机
+– virsh destroy  虚拟机名称
+######################################################
+一台KVM虚拟机的组成
+
+– xml配置文件（虚拟机描述文件）:定义虚拟机的名称、UUID、CPU、内
+存、虚拟磁盘、网卡等各种参数设置
+默认存放的路径：/etc/libvirt/qemu
+
+
+– 磁盘镜像文件:保存虚拟机的操作系统及文档数据,镜像路径取决于xml配置文件中的定义
+默认存放的路径：/var/lib/libvirt/images
+
+####################################################
+命令行手动创建虚拟机
+1.创建磁盘镜像文件
+]$ cd /var/lib/libvirt/images/
+]$ du -sh .node_base.qcow2
+
+]$ cp   .node_base.qcow2      nsd02.qcow2
+
+]$ du -sh nsd02.qcow2 
+
+2.xml配置文件
+]$ virsh dumpxml nsd01   #导出nsd01虚拟机的xml文件信息
+]$ virsh dumpxml nsd01 > /etc/libvirt/qemu/nsd02.xml
+]$ ls -l /etc/libvirt/qemu/nsd02.xml
+
+]$ vim /etc/libvirt/qemu/nsd02.xml
+  
+   <name>nsd02</name>  #虚拟机名字
+   <uuid>.......</uuid>  #删除整行内容
+   <source file='/var/lib/libvirt/images/nsd02.qcow2'/>
+                                                  #修改磁盘文件名称
+   <mac address='52:54:00:5d:1f:48'/>  #删除整行内容
+
+3.导入虚拟机信息
+]$ virsh define /etc/libvirt/qemu/nsd02.xml   #导入虚拟机信息
+]$ virsh list --all   #显示所有虚拟机
+
+]$ virsh start nsd02   #将nsd02虚拟机开机
+]$ virt-manager        #打开图形管理器
+
+###################################################
+命令行手动创建虚拟机
+1.创建磁盘镜像文件
+]$ mkdir /home/student/nsdfile
+
+]$ cp /var/lib/libvirt/images/.node_base.qcow2   /home/student/nsdfile/nsd03.qcow2 
+
+]$ du -sh /home/student/nsdfile/nsd03.qcow2
+
+2.建立xml配置文件
+]$ virsh dumpxml nsd01 > /home/student/nsdfile/nsd03.xml
+]$ vim /home/student/nsdfile/nsd03.xml
+
+   <name>nsd03</name>  #虚拟机名字
+   <uuid>.......</uuid>  #删除整行内容
+   <source file='/home/student/nsdfile/nsd03.qcow2'/>
+
+   <mac address='52:54:00:5d:1f:48'/>  #删除整行内容
+
+3.导入虚拟机的信息
+]$ virsh define /home/student/nsdfile/nsd03.xml 
+]$ virsh start nsd03
+
+]$ virsh list --all
+
+######################################################
+三合一命令：导出  修改  导入
+编辑:virsh  edit  虚拟机名   
+
+命令行手动创建虚拟机                                   
+1.创建磁盘镜像文件
+]$ cd /var/lib/libvirt/images/
+]$ cp .node_base.qcow2        nsd04.qcow2
+
+2.建立xml配置文件
+[student@room9pc01 /]$ virsh edit nsd01
+   <name>nsd04</name>  #虚拟机名字
+   <uuid>.......</uuid>  #删除整行内容
+   <source file='/var/lib/libvirt/images/nsd04.qcow2'/>
+                                                                          #修改磁盘文件名称
+   <mac address='52:54:00:5d:1f:48'/>  #删除整行内容
+
+[student@room9pc01 /]$ virsh list --all
+[student@room9pc01 /]$ virsh start nsd04
+
+#####################################################
+命令行删除虚拟机
+
+]$ virsh destroy nsd04    #强制关机
+]$ virsh list --all       #查看所有虚拟机
+]$ virsh undefine nsd04   #取消nsd04虚拟机的定义
+]$ virsh list --all       #查看所有虚拟机
+
+]$ rm -rf /var/lib/libvirt/images/nsd04.qcow2  #手动删除
+
+#####################################################
+常用镜像盘类型
+• 虚拟机的磁盘镜像文件格式
+	特点\类型 	RAW 	QCOW2
+	KVM默认 		否 		是
+	I/O效率 		高 		较高
+	占用空间 		大 		小
+	压缩 		不支持 	支持
+	后端盘复用 	不支持 	支持
+	快照 		不支持 	支持
+
+######################################################
+虚拟机快建技术
+
+COW技术原理
+• Copy On Write,写时复制
+– 直接映射原始盘的数据内容
+– 当原始盘的旧数据有修改时,在修改之前自动将旧数据存入前端盘
+– 对前端盘的修改不回写到原始盘
+– 一旦生成前端盘，那么原始盘数据不能进行修改
+
+
+
+快速创建qcow前端盘
+• qemu-img 通过 -b 选项复用指定原始盘
+– qemu-img  create  -f qcow2  -b  原始盘     前端盘   前端盘大小
+1.利用.node_base.qcow2制作前端盘                             
+]$ cd /var/lib/libvirt/images/
+]$ du -sh .node_base.qcow2 
+
+]$ qemu-img create -f qcow2  -b .node_base.qcow2   nsd05.qcow2  10G
+
+]$ qemu-img info nsd05.qcow2       #查看磁盘文件信息
+]$ qemu-img info .node_base.qcow2  #查看磁盘文件信息
+2.建立xml配置文件
+[student@room9pc01 /]$ virsh edit nsd01
+   <name>nsd05</name>  #虚拟机名字
+   <uuid>.......</uuid>  #删除整行内容
+   <source file='/var/lib/libvirt/images/nsd05.qcow2'/>
+                                                                          #修改磁盘文件名称
+   <mac address='52:54:00:5d:1f:48'/>  #删除整行内容
+[student@room9pc01 /]$ virsh start nsd05
+
+######################################################
+
+配置虚拟机系统有奇招,离线访问虚拟机磁盘文件内容
+• 使用 guestmount 工具
+
+• 基本用法
+guestmount -a 虚拟机磁盘路径 -i /挂载点
+
+
+]# guestmount -a /var/lib/libvirt/images/nsd01.qcow2 -i /mnt/
+
+fuse: mountpoint is not empty
+fuse: if you are sure this is safe, use the 'nonempty' mount option
+libguestfs: error: fuse_mount: /mnt/: 成功
+
+]# guestmount -o nonempty -a /var/lib/libvirt/images/nsd01.qcow2 -i /mnt/
+
+#######################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

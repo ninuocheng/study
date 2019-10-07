@@ -1,0 +1,437 @@
+搭建新的教学环境
+一、在真机上生成两台虚拟机
+[student@room9pc01 ~]$ clone-vm7 
+Enter VM number: 9
+Creating Virtual Machine disk image......	[OK]
+Defining new virtual machine......		[OK]
+
+[student@room9pc01 ~]$ clone-vm7 
+Enter VM number: 10
+Creating Virtual Machine disk image......	[OK]
+Defining new virtual machine......		[OK]
+[student@room9pc01 ~]$ 
+
+虚拟机root的密码为：123456
+
+虚拟机信息：
+   1.系统版本：CentOS 7.5
+   2.网卡eth0的IP地址：无
+   3.主机名：loaclhost
+
+
+二、虚拟机的配置
+虚拟机A：
+1.修改主机名：svr7.tedu.cn
+[root@localhost ~]# echo  svr7.tedu.cn > /etc/hostname
+[root@localhost ~]# cat  /etc/hostname
+[root@localhost ~]# hostname svr7.tedu.cn
+[root@localhost ~]# hostname
+
+[root@localhost ~]# exit
+
+2.修改eth0的网卡IP地址：192.168.4.7/24                           
+[root@svr7 ~]# nmcli  connection  modify  eth0      
+  ipv4.method   manual                                  
+  ipv4.addresses   192.168.4.7/24       
+  connection.autoconnect   yes
+
+[root@svr7 ~]# nmcli  connection up eth0
+[root@svr7 ~]# ifconfig | head -2
+
+虚拟机B：
+1.修改主机名：pc207.tedu.cn
+2.修改eth0的网卡IP地址：192.168.4.207/24
+
+#####################################################
+三、真机远程管理虚拟机A与虚拟机B
+
+1.能与虚拟机A和虚拟机B进行通信
+[student@room9pc01 ~]$ ping 192.168.4.7
+[student@room9pc01 ~]$ ping 192.168.4.207
+
+2.真机进行远程管理
+[student@room9pc01 ~]$ ssh -X root@192.168.4.7
+
+[root@svr7 ~]# cat /etc/motd     #屏幕显示内容
+
+3.真机定义永久的别名
+[student@room9pc01 ~]$ vim /home/student/.bashrc 
+alias  goa='ssh -X root@192.168.4.7'
+alias  gob='ssh -X root@192.168.4.207'
+
+   新开一个终端进行验证
+
+#######################################################
+四、构建Yum仓库
+
+真机为服务端：构建FTP服务，提供光盘CentOS 7.5所有内容
+ 1.安装vsftpd软件包
+[student@room9pc01 ~]$ rpm -q vsftpd
+vsftpd-3.0.2-22.el7.x86_64
+[student@room9pc01 ~]$ 
+2.查看vsftpd服务状态
+[student@room9pc01 ~]$ systemctl status vsftpd
+
+   Active: active (running) 
+
+3.提供光盘CentOS 7.5所有内容
+默认共享数据的路径：/var/ftp
+]$ mkdir /var/ftp/centos-1804
+]$ mount /iso/CentOS7-1804.iso     /var/ftp/centos-1804/
+]$ ls /var/ftp/centos-1804/
+
+]$ vim /etc/fstab 
+/var/lib/libvirt/images/iso/CentOS7-1804.iso  /var/ftp/centos-1804 iso9660 defaults 0 0
+
+
+]$ firefox ftp://192.168.4.254/centos-1804
+
+虚拟机为客户端：                                                            
+[root@svr7 ~]# vim /etc/yum.repos.d/local.repo
+[local_repo]
+name=CentOS-$releasever - Base
+baseurl="ftp://192.168.4.254/centos-1804"
+enabled=1
+gpgcheck=0
+[root@svr7 ~]# yum -y install xeyes
+
+#####################################################
+
+扩展的几个应用
+
+目录结构
+• 认识Linux的目录层次:
+– man hier
+
+• 常见一级目录的用途
+	/boot 存放系统引导必需的文件,包括内核、启动配置
+	/bin、/sbin 存放各种命令程序
+	/dev 存放硬盘、键盘、鼠标、光驱等各种设备文件
+	/etc 存放Linux系统及各种程序的配置文件
+	/root、/home/用户名 分别是管理员root、普通用户的默认家目录
+	/var 存放日志文件、邮箱目录等经常变化的文件
+	/proc 存放内存中的映射数据,不占用磁盘
+	/tmp 存放系统运行过程中使用的一些临时文件
+
+
+###################################################
+权限的数值表示
+• 权限的数值化
+– 基本权限:r = 4,w = 2,x = 1
+– 附加权限:SUID = 4,SGID = 2,Sticky Bit = 1
+
+• 采用数值形式设置权限
+– chmod [-R] nnn 文档...
+– chmod [-R] xnnn 文档...
+
+[root@svr7 ~]# mkdir /nsd01
+[root@svr7 ~]# ls -ld /nsd01
+
+[root@svr7 ~]# chmod 700 /nsd01
+[root@svr7 ~]# ls -ld /nsd01
+
+[root@svr7 ~]# chmod 007 /nsd01
+[root@svr7 ~]# ls -ld /nsd01
+
+[root@svr7 ~]# chmod 750 /nsd01
+[root@svr7 ~]# ls -ld /nsd01
+
+[root@svr7 ~]# chmod 707 /nsd01
+[root@svr7 ~]# ls -ld /nsd01
+
+####################################################
+历史命令
+• 管理/调用曾经执行过的命令
+– history:查看历史命令列表
+– history -c:清空历史命令
+– !n:执行命令历史中的第n条命令
+– !str:执行最近一次以str开头的历史命令
+
+• 调整历史命令的数量
+[root@svr7 ~]# vim /etc/profile
+HISTSIZE=1000    //默认记录1000条
+
+
+[root@svr7 ~]# history           #查看历史命令
+[root@svr7 ~]# history -c        #清空历史命令
+[root@svr7 ~]# history             
+    1  history 
+[root@svr7 ~]# cat /etc/redhat-release 
+CentOS Linux release 7.5.1804 (Core) 
+[root@svr7 ~]# ls /root/
+Desktop
+[root@svr7 ~]# ls /opt/
+[root@svr7 ~]# cat /etc/shells 
+[root@svr7 ~]# history 
+
+[root@svr7 ~]# !cat       #执行历史命令中最近一条以cat开头的
+
+########################################################
+• du,统计文件的占用空间
+– -s:只统计每个参数所占用的总空间大小
+– -h:提供易读容量单位(K、M等)
+[root@svr7 ~]# du -sh /root/
+[root@svr7 ~]# du -sh /etc/  /root /home
+[root@svr7 ~]# du -sh /
+• date,查看/调整系统日期时间
+– date +%F、date +%R
+– date +"%Y-%m-%d %H:%M:%S"
+– date -s "yyyy-mm-dd HH:MM:SS"
+
+[root@svr7 ~]# date +%F   #显示 年-月-日
+[root@svr7 ~]# date +%R   #显示 时:分
+[root@svr7 ~]# date +%Y   #显示 年
+[root@svr7 ~]# date +%m   #显示 月
+[root@svr7 ~]# date +%d   #显示 日期
+
+##################################################
+制作快捷方式
+
+软连接
+  格式：ln -s  /路径/源数据      /路径/快捷方式的名称
+  若原始文件或目录被删除,连接文件将失效
+  软连接可存放在不同分区/文件系统
+
+
+[root@svr7 ~]# ln -s  /etc/passwd  /opt/p.txt
+[root@svr7 ~]# ls /opt/
+p.txt
+[root@svr7 ~]# ls -l /opt/p.txt 
+[root@svr7 ~]# cat /opt/p.txt 
+
+硬连接
+  格式：ln   /路径/源数据      /路径/快捷方式的名称
+  若原始文件被删除,连接文件仍可用
+  硬连接与原始文件必须在同一分区/文件系统  
+
+[root@svr7 ~]# rm -rf /opt/*
+[root@svr7 ~]# echo 123 > /opt/A
+[root@svr7 ~]# cat /opt/A
+
+[root@svr7 ~]# ln -s   /opt/A  /opt/B   #制作软连接
+[root@svr7 ~]# ls /opt/
+
+[root@svr7 ~]# ln   /opt/A   /opt/C     #制作硬连接
+[root@svr7 ~]# ls /opt/
+[root@svr7 ~]# cat /opt/B
+[root@svr7 ~]# cat /opt/C
+
+[root@svr7 ~]# rm -rf /opt/A
+[root@svr7 ~]# ls /opt/
+[root@svr7 ~]# cat /opt/B
+cat: /opt/B: 没有那个文件或目录
+[root@svr7 ~]# cat /opt/C
+######################################################
+获取命令帮助
+方式1：利用 --help
+[root@svr7 ~]# ls --help
+
+方式2：利用 man
+[root@svr7 ~]# man ls
+
+[root@svr7 ~]# man passwd
+[root@svr7 ~]# man 5 passwd     #数字5代表帮助信息类型
+
+  #数字5代表文本文件类型的帮助信息
+
+#####################################################
+zip归档工具
+制作.zip压缩包
+• 归档+压缩操作
+– zip [-r] 备份文件.zip 被归档的文档...
+[root@svr7 ~]# yum -y install zip
+[root@svr7 ~]# zip -r /mnt/abc.zip  /boot/   /etc/passwd
+[root@svr7 ~]# ls /mnt/
+
+[root@svr7 ~]# zip -r /mnt/nsd.zip  /root   /etc/shadow
+[root@svr7 ~]# ls /mnt/
+释放.zip压缩包
+• 释放归档+解压操作
+– unzip 备份文件.zip [-d 目标文件夹]
+[root@svr7 ~]# mkdir /nsd02  /nsd03
+[root@svr7 ~]# yum -y install unzip
+[root@svr7 ~]# unzip /mnt/abc.zip -d /nsd02 
+[root@svr7 ~]# ls /nsd02 
+
+[root@svr7 ~]# unzip /mnt/nsd.zip -d /nsd03 
+[root@svr7 ~]# ls /nsd03 
+
+######################################################
+自定义Yum仓库
+
+1.前提具备从互联网下载的软件包
+2.将软件包从真机传递到虚拟机A
+[student@room9pc01 ~]$ ls /linux-soft/01/
+[student@room9pc01 ~]$ scp /linux-soft/01/tools.tar.gz   root@192.168.4.7:/root/
+
+  # scp=ssh+cp
+
+3.虚拟机A上验证                                              
+[root@svr7 ~]# ls /root/
+[root@svr7 ~]# tar -xf /root/tools.tar.gz   -C  /
+[root@svr7 ~]# ls /
+[root@svr7 ~]# ls /tools/
+inotify-tools-3.13.tar.gz  other
+
+[root@svr7 ~]# ls /tools/other/
+
+4.生成仓库的数据文件
+[root@svr7 ~]# yum -y install createrepo
+
+[root@svr7 ~]# createrepo /tools/other/
+[root@svr7 ~]# ls /tools/other/
+
+5.指定本机为Yum服务端
+[root@svr7 ~]# vim /etc/yum.repos.d/local.repo
+[local_repo]
+name=CentOS-$releasever - Base
+baseurl="ftp://192.168.4.254/centos-1804"
+enabled=1
+gpgcheck=0
+
+[myrpm]
+name=CentOS-$releasever - Base
+baseurl=file:///tools/other      #指定本机为Yum服务端
+enabled=1
+gpgcheck=0
+
+[root@svr7 ~]# yum  repolist
+
+
+[root@svr7 ~]# yum -y install sl
+[root@svr7 ~]# sl
+
+[root@svr7 ~]# yum -y install cmatrix
+[root@svr7 ~]# cmatrix
+
+[root@svr7 ~]# yum -y install oneko
+[root@svr7 ~]# oneko
+
+[root@svr7 ~]# oneko &              #将程序放入后台运行
+[root@svr7 /]# killall oneko        #杀死所有oneko程序
+
+####################################################
+源码编译安装
+
+rpm包： rpm -ivh   yum install
+
+
+源码包-----gcc与make工具------》可以执行的程序--------》运行安装
+
+优势：1.较新的版本    2.安装位置与功能可以进行选择
+
+
+步骤一：安装gcc与make开发工具
+[root@svr7 /]# yum -y install gcc make
+
+步骤二：进行tar解包
+]# ls /tools/
+]# tar -xf /tools/inotify-tools-3.13.tar.gz  -C  /
+
+]# ls /
+]# ls /inotify-tools-3.13
+
+步骤三：运行configure脚本进行配置
+             作用1：检测当前系统是否安装gcc
+             作用2：安装位置与功能可以进行选择
+             --prefix=指定安装位置
+
+]# cd  /inotify-tools-3.13
+]# ./configure   --prefix=/opt/myrpm
+
+
+常见报错：未安装gcc软件
+checking for gcc... no
+checking for cc... no
+checking for cl.exe... no
+configure: error: no acceptable C compiler found in $PATH
+See `config.log' for more details.
+
+步骤四：进行编译make                 
+]# cd  /inotify-tools-3.13
+]# make
+
+步骤五：进行运行安装make install
+]# cd  /inotify-tools-3.13
+]# make install
+
+
+]# ls /opt/
+]# ls /opt/myrpm/
+]# ls /opt/myrpm/bin/
+
+######################################################
+vim编辑技巧
+[root@svr7 /]# cp /etc/passwd  /opt/pa.txt
+[root@svr7 /]# vim /opt/pa.txt
+命令模式操作
+光标跳转
+	上、下、左、右
+	Home 键 或 ^、数字 0 	跳转到行首
+	End 键 或“$”键 		跳转到行尾
+	PgUp 键、PgDn 键 		向上翻页、向下翻页
+	1G 或 gg 			跳转到文件的首行
+	G 					跳转到文件的末尾行
+复制/粘贴/删除
+	复制 yy、#yy 		复制光标处的一行、#行
+	粘贴 p、P 		粘贴到光标处之后、之前
+	x 或 Delete键 	删除光标处的单个字符
+	dd、#dd 			删除光标处的一行、#行
+	d^ 				从光标处之前删除至行首
+	d$或D 			从光标处删除到行尾
+	C 				从光标处删除到行尾，并且进入插入模式
+	u 				撤销
+查找/撤销/保存
+	/word 		向后查找字符串“word”
+	n、N 		跳至后/前一个结果
+	u 			撤销最近的一次操作
+	U 			撤销对当前行的所有修改
+	Ctrl + r 	取消前一次撤销操作
+	ZZ 			保存修改并退出
+[root@svr7 /]# cp /etc/passwd  /opt/pa.txt
+[root@svr7 /]# vim /opt/pa.txt
+
+末行模式操作
+
+:r /etc/filesystems   读入其他文件内容
+[root@svr7 /]# echo  123456 > /opt/1.txt
+[root@svr7 /]# echo  abcd > /opt/2.txt
+[root@svr7 /]# vim  /opt/1.txt
+      :r  /opt/2.txt      #读入/opt/2.txt文件内容
+      :r  /etc/passwd     #读入/etc/passwd文件内容
+      :r  /etc/hostname   #读入/etc/hostname文件内容
+
+
+字符串替换                                                                    
+	:s/old/new        替换当前行第一个“old”
+	:s/old/new/g      替换当前行所有的“old”
+	:1,10 s/old/new/g 替换第1-10行所有的“old”
+	:% s/old/new/g    替换文件内所有的“old”
+
+
+[root@svr7 /]# cp /etc/passwd /opt/haha.txt
+[root@svr7 /]# vim /opt/haha.txt
+
+
+开关参数的控制
+	:set nu或nonu 	显示/不显示行号
+	:set ai或noai 	启用/关闭自动缩进
+
+##################################################
+补充：
+E325: 注意
+发现交换文件 ".1.txt.swp"
+[student@room9pc01 ~]$ rm -rf .1.txt.swp   #删除交换文件
+
+#################################################
+
+
+
+
+
+
+
+
+
+
+
