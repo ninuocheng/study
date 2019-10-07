@@ -1,0 +1,373 @@
+命令行基础
+• Linux命令
+– 用来实现某一类功能的指令或程序
+   绿色：可以执行的程序
+   执行Linux大多数命令，需要找到相对应的程序
+
+– 命令的执行依赖于解释器(默认的解释器程序：/bin/bash)
+
+        用户 ------》解释器 ------》内核------》硬件
+
+#######################################################
+命令行的一般格式
+• 基本用法
+– 命令字     [选项]...      [参数1]      [参数2]...
+   打                             黄老师
+
+[root@A ~]# cat --help      #查看命令的帮助信息
+[root@A ~]# cat -n  /etc/shells         #显示行号
+
+[root@A ~]# cat -n  /etc/redhat-release       
+[root@A ~]# cat -n  /etc/passwd
+[root@A ~]# cat -n  /etc/group
+[root@A ~]# cat -n  /etc/fstab
+[root@A ~]# cat -n  /etc/hosts
+
+[root@A ~]# ls  -l  /root/       #显示目录的内容详细属性
+[root@A ~]# ls  -l  /etc/passwd
+[root@A ~]# ls  -l  /etc/fstab
+[root@A ~]# ls  -l  /boot
+
+ 容量单位：EB
+  1EB=1024PB
+  1PB=1024TB
+
+#####################################################
+快速编辑技巧
+• Tab键自动补全
+–  可补齐命令字、选项、参数、文件路径、软件名、服务名
+
+[root@A ~]# if(Tab)(Tab)
+if         ifconfig   ifenslave  ifup
+ifcfg      ifdown     ifstat     
+
+[root@A ~]# ifco(Tab)
+[root@A ~]# cat /et(Tab)/red(Tab)
+
+]# ls /etc/sysconfig/network-scripts/ifcfg-eth0 
+]# cat /et(Tab)/sysco(Tab)/netw(Tab)-(Tab)/ifc(Tab)-e(Tab)
+
+[root@A ~]# hostname
+
+
+• 快捷键
+– Ctrl + l:清空整个屏幕
+– Ctrl + c:废弃当前编辑的命令行(结束正在运行的指令)
+– Esc + . 或 Alt + .:粘贴上一个命令的参数
+[root@A ~]# ls /etc/shells 
+/etc/shells
+[root@A ~]# ls  -l  Alt + .
+[root@A ~]# cat   Alt + .
+[root@A ~]# cat  -n   Alt + .
+
+
+– Ctrl + u:清空至行首
+– Ctrl + w:往回删除一个单词(以空格界定)
+
+#######################################################
+mount挂载操作：让目录成为设备的访问点
+一、在Linux显示光盘内容
+
+Windows
+   光盘------》光驱设备------》CD驱动器（图标）
+
+Linux
+   光盘------》光驱设备------》访问点 （目录）                                         
+          /dev/cdrom
+
+1.图形将光盘文件放入到虚拟光驱设备
+2.命令行查看光驱设备
+[root@A ~]# ls /dev/sr0
+/dev/sr0
+[root@A ~]# ls /dev/cdrom
+/dev/cdrom
+[root@A ~]# ls -l /dev/cdrom
+
+3.进行挂载访问
+• 使用mount命令
+– 格式:mount  设备路径     挂载点目录
+
+[root@A ~]# mkdir /dvd
+[root@A ~]# ls /dvd
+
+[root@A ~]# mount /dev/cdrom   /dvd
+mount: /dev/sr0 写保护，将以只读方式挂载
+[root@A ~]# ls /dvd/
+[root@A ~]# ls /dvd/P(Tab)
+4.卸载
+[root@A ~]# umount /dvd/
+[root@A ~]# ls /dvd/
+
+[root@A ~]# mkdir /nsd
+[root@A ~]# ls /nsd
+
+[root@A ~]# mount /dev/cdrom   /nsd
+[root@A ~]# ls /nsd
+
+注意事项：
+   1.Linux允许一个设备，同时挂载到多个不同的挂载点
+      2.卸载时当前的路径不要是挂载点目录
+[root@A nsd]# umount /nsd
+umount: /nsd：目标忙。
+      3.挂载时尽量采用自己创建的目录作为挂载点
+
+#######################################################
+查看及切换目录
+
+使用pwd、cd
+• pwd — Print Working Directory
+– 用途:查看当前工作目录
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd [目标文件夹位置]
+
+   .. :上一级目录
+   . :当前目录
+   ～：用户家目录
+
+    /root：管理员的家目录
+    /home:此目录为存放普通用户的家目录
+[root@A lisi]# cd ~root      #切换到root用户的家目录
+[root@A ~]# pwd
+/root
+[root@A ~]# useradd tom      #创建普通用户tom
+[root@A ~]# ls /home/
+[root@A ~]# cd ~tom          #切换到tom用户的家目录
+[root@A tom]# pwd
+
+[root@A ~]# useradd harry  #创建普通用户harry
+[root@A ~]# ls /home/
+[root@A ~]# cd ~harry      #切换到harry用户的家目录
+[root@A harry]# pwd
+
+ls 列出文档及属性
+• ls — List
+– 格式:ls [选项]... [目录或文件名]
+• 常用命令选项
+– -l:以长格式显示，显示详细属性
+– -A:包括名称以 . 开头的隐藏文档
+– -d:显示目录本身(而不是内容)的属性
+– -h:提供易读的容量单位(K、M等)
+
+[root@A /]# ls  -l  /etc/passwd        
+[root@A /]# ls  -lh  /etc/passwd
+[root@A /]# ls  -lh  /etc/fstab
+[root@A /]# ls  -lh  /boot    #显示/boot目录内容的详细属性
+
+[root@A /]# ls  -ld /root      #显示/root目录本身的详细属性
+[root@A /]# ls  -ld /boot      #显示/boot目录本身的详细属性
+[root@A /]# ls  -ld /          #显示/目录本身的详细属性
+
+[root@A /]# touch /mnt/.nsd.txt
+[root@A /]# ls /mnt/
+[root@A /]# ls -A /mnt/
+
+[root@A /]# ls -A /root
+[root@A /]# ls -A /boot
+
+######################################################
+使用通配符
+• 针对不确定的文档名称,以特殊字符表示
+– *:任意多个任意字符
+– ?:单个字符
+
+[root@A /]# ls   /root/a*         #显示以a开头数据
+[root@A /]# ls   /etc/*tab        #显示以tab结尾数据
+[root@A /]# ls   /dev/tty*
+[root@A /]# ls   /etc/*.conf
+
+[root@A /]# ls   /dev/tty?
+[root@A /]# ls   /dev/tty??
+[root@A /]# ls   /etc/??tab
+
+• 针对不确定的文档名称,以特殊字符表示
+– [a-z]:多个字符或连续范围中的一个,若无则忽略
+– {a,min,xy}:多组不同的字符串,全匹配
+
+[root@A /]# ls /dev/tty[3-8]
+[root@A /]# ls /dev/tty[1-9]
+[root@A /]# ls /dev/tty[0-6]
+
+[root@A /]# ls /dev/tty{1,3,5,7,9,38}
+[root@A /]# ls /dev/tty{S0,S1,S2,S3}
+[root@A /]# ls /dev/tty{20，30，40}
+
+######################################################
+
+别名的定义：简化复杂的命令
+• 查看已设置的别名
+– alias [别名名称]
+
+• 定义新的别名
+– alias 别名名称= '实际执行的命令行'
+
+• 取消已设置的别名
+– unalias [别名名称]
+
+[root@A /]# hn
+bash: hn: 未找到命令...
+[root@A /]# alias  hn='hostname'   #定义别名
+[root@A /]# hn
+[root@A /]# alias          #查看当前系统生效的别名
+
+[root@A /]# alias  myls='ls -lhd'
+[root@A /]# myls  /root/
+[root@A /]# unalias  myls      #删除别名
+##################################################
+新建文档
+
+mkdir 创建目录
+• mkdir — Make Directory
+– 格式:mkdir [-p] [/路径/]目录名...       //-p表示连父目录一起创建
+[root@A /]# mkdir  -p  /vod/movie/cartoon
+
+[root@A /]# ls -R /vod
+
+[root@A /]# mkdir  -p  /opt/aa/bb/cc/dd
+[root@A /]# ls /opt/aa
+
+  ls -R :递归显示目录内容所有
+
+[root@A /]# ls -R /opt/aa               
+
+######################################################
+查找文本内容
+• 根据字符串模式提取文本行
+– grep  [选项]   '匹配模式'       文本文件
+
+• 常用命令选项
+– -v,取反匹配
+– -i,忽略大小写
+
+[root@A /]# grep ROOT /etc/passwd
+[root@A /]# grep -i  ROOT   /etc/passwd  #忽略大小写
+[root@A /]# grep -v root  /etc/passwd    #输出不包含root的行
+
+– ^word 以字符串word开头
+– word$ 以字符串word结尾
+[root@A /]# grep ^root /etc/passwd      #以root开头的行
+[root@A /]# grep  bash$ /etc/passwd     #以bash结尾的行
+
+########################################################
+rm 删除
+• rm — Remove
+– 格式:rm [选项]... 文件或目录...
+
+• 常用命令选项
+– -r、-f:递归删除(含目录)、强制删除
+
+[root@A /]# rm -rf /opt/*
+[root@A /]# touch /opt/1.txt
+[root@A /]# mkdir /opt/nsd
+[root@A /]# ls /opt
+
+[root@A /]# rm -rf /opt/nsd
+[root@A /]# ls /opt
+[root@A /]# rm -rf /opt/1.txt
+[root@A /]# ls /opt
+
+#####################################################
+
+mv 移动/改名
+• mv — Move
+– 格式:mv [选项]... 原文件...      目标路径        
+[root@A /]# rm -rf /opt/*
+[root@A /]# mkdir /opt/nsd
+[root@A /]# touch /opt/1.txt
+[root@A /]# ls /opt/
+
+[root@A /]# mv /opt/1.txt  /opt/nsd
+[root@A /]# ls /opt/
+[root@A /]# ls /opt/nsd/
+重命名：路径不变的移动
+[root@A /]# mv /opt/nsd/  /opt/haha
+[root@A /]# ls /opt/
+
+[root@A /]# mv /opt/haha/   /opt/student
+[root@A /]# ls /opt/
+
+#######################################################
+cp 复制
+• cp — Copy
+– 格式:cp [选项]... 原文件...      目标路径
+• 常用命令选项
+– -r:递归,复制目录时必须有此选项
+
+[root@A /]# cp /etc/passwd  /opt/
+[root@A /]# ls /opt/
+
+[root@A /]# cp -r /boot/  /opt/
+[root@A /]# ls /opt/
+
+[root@A /]# cp -r /home  /opt/
+[root@A /]# ls /opt/
+
+[root@A /]# cp  /etc/fstab  /opt/
+[root@A /]# ls /opt/
+
+复制时出现同名：临时在本次操作，取消别名的定义
+[root@A /]# \cp -r /boot/  /opt/   #没有提示信息，强制覆盖
+[root@A /]# \cp -r /boot/  /opt/
+
+复制与点连用
+[root@A /]# cd /opt/
+[root@A opt]# ls
+[root@A opt]# cp  /etc/hosts   .   #将数据复制到当前
+[root@A opt]# ls
+
+[root@A opt]# cd /etc/sysconfig/network-scripts/
+[root@A network-scripts]# cp  /etc/group      .
+
+复制可以支持两个以上的参数：永远会将最后一个参数，作为目标。其他的所有参数全部作为源。
+]# cp -r /etc/passwd /etc/group  /home/  /boot/  /mnt/
+]# ls /mnt/
+
+复制可以重新命名
+[root@A /]# cp /etc/passwd  /opt/p.txt
+[root@A /]# ls /opt/
+
+[root@A /]# cp -r /boot/  /opt/abc
+[root@A /]# ls /opt/
+
+[root@A /]# cp /etc/redhat-release /opt/r.txt
+[root@A /]# ls /opt/
+
+####################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

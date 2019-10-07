@@ -1,0 +1,273 @@
+实现lisi用户可以读取/etc/shadow文件内容，您有几种办法？
+
+1.利用其他人进行权限设置
+      chmod   o+r  /etc/shadow
+
+2.利用所属组进行权限设置
+      chown  :lisi   /etc/shadow
+      chmod   g+r   /etc/shadow
+
+3.利用所有者进行权限设置
+      chown   lisi   /etc/shadow
+      chmod   u+r   /etc/shadow
+
+4.利用ACL进行权限设置
+      setfacl  -m u:lisi:r  /etc/shadow
+
+#######################################################
+Set UID
+• 附加在属主的 x 位上
+– 属主的权限标识会变为 s
+– 适用于可执行文件,Set UID可以让使用者具有文件属主的身份及部分权限
+
+[root@server0 ~]# ls /usr/bin/mkdir 
+[root@server0 ~]# /usr/bin/mkdir  /opt/abc01
+[root@server0 ~]# ls /opt/
+
+[root@server0 ~]# cp /usr/bin/mkdir  /usr/bin/hahadir
+[root@server0 ~]# /usr/bin/hahadir  /opt/abc02
+[root@server0 ~]# ls /opt/
+
+[root@server0 ~]# chmod u+s /usr/bin/hahadir 
+[root@server0 ~]# ls -l /usr/bin/hahadir
+[root@server0 ~]# su - student
+[student@server0 ~]$ /usr/bin/mkdir  nsd01
+[student@server0 ~]$ ls -l 
+
+[student@server0 ~]$ /usr/bin/hahadir  nsd02
+[student@server0 ~]$ ls -l
+[student@server0 ~]$ exit
+######################################################
+软件包管理                                                 
+
+一、零散软件管理
+1.具备众多的软件包，从光盘中获得
+2.虚拟机clssroom构建Web服务，共享了RHEL7.0光盘所有内容
+
+    Web服务：提供一个网页内容
+    http协议：超文本传输协议
+    https协议：安全的超文本传输协议
+
+3.访问虚拟机clssroom的页面
+  http://classroom.example.com/content/rhel7.0/x86_64/dvd/
+
+4.下载软件包
+• 使用wget下载工具
+– wget 软件包的URL网址
+– wget 软件包的URL网址   -O(大写) /目录路径/新文件名
+
+ /content/rhel7.0/x86_64/dvd/Packages  
+ 
+ 在页面中按Ctrl + f 进行当前页面查找:vsftpd  右击"复制链接地址"
+[root@server0 ~]# wget  http://classroom.example.com/content/rhel7.0/x86_64/dvd/Packages/vsftpd-3.0.2-9.el7.x86_64.rpm
+
+[root@server0 ~]#  ls
+
+
+5.使用rpm命令管理软件
+• RPM Package Manager,RPM包管理器
+– rpm -q 软件名...
+– rpm -ivh 软件名-版本信息.rpm...
+– rpm -e 软件名...
+
+[root@server0 ~]# rpm -q vsftpd    #查看vsftpd是否安装
+[root@server0 ~]# rpm -q firefox
+[root@server0 ~]# rpm -q zip
+
+]# rpm -i /root/vsftpd-3.0.2-9.el7.x86_64.rpm  #安装软件包
+警告：/root/vsftpd-3.0.2-9.el7.x86_64.rpm: 头V3 RSA/SHA256 Signature, 密钥 ID fd431d51: NOKEY（未识别红帽签名）
+
+[root@server0 ~]# rpm -q vsftpd     #查看是否安装成功
+[root@server0 ~]# rpm -e vsftpd     #卸载软件包
+[root@server0 ~]# rpm -q vsftpd     #查看是否卸载成功成功
+未安装软件包 vsftpd 
+
+]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+]# rpm -q vsftpd 
+
+
+[root@server0 ~]# rpm -qi vsftpd  #查询已经安装的软件信息
+[root@server0 ~]# rpm -ql vsftpd  #查询已经安装的软件的安装清单
+
+########################################################
+了解：导入红帽签名信息
+]# wget http://classroom.example.com/content/rhel7.0/x86_64/dvd/RPM-GPG-KEY-redhat-release
+
+]# rpm --import /root/RPM-GPG-KEY-redhat-release 
+
+[root@server0 ~]# rpm -e vsftpd
+[root@server0 ~]# rpm -q vsftpd
+未安装软件包 vsftpd 
+[root@server0 ~]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+
+#####################################################
+常见安装软件包错误：
+]# rpm -ivh /root/httpd-2.4.6-17.el7.x86_64.rpm 
+错误：依赖检测失败：
+
+Yum软件包（软件包仓库）：自动解决依赖关系，安装软件包
+
+服务：自动解决依赖关系，安装软件包
+
+服务端： 1.众多的软件包   2.仓库数据文件   3.构建Web服务
+              总结：构建Web服务，提供光盘所有内容
+        虚拟机classroom,构建Web服务共享RHEL7.0光盘所有内容
+
+客户端：虚拟机server
+         指定服务端位置
+     Yum客户端配置文件/etc/yum.repos.d/*.repo
+         错误的文件会影响正确的文件
+
+[root@server0 ~]# firefox classroom.example.com
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+[dvd]                              #仓库标识
+name=haha xixi hehe lele           #仓库描述信息
+baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/         #指定服务端基本网络路径
+enabled=1           #是否启用本文件
+gpgcheck=0          #是否检测红帽的签名认证
+[root@server0 ~]# yum  repolist   #显示识别的仓库信息 
+
+Yum仓库的使用                                                         
+1.安装软件包
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# rpm -q httpd
+[root@server0 ~]# yum -y install sssd
+[root@server0 ~]# yum -y install mariadb-server
+[root@server0 ~]# yum -y install bind-chroot
+[root@server0 ~]# yum -y install system-config-kickstart
+
+2.卸载软件包
+[root@server0 ~]# yum remove httpd
+[root@server0 ~]# yum remove sssd
+
+3.清空Yum的缓存
+[root@server0 ~]# yum clean all    #清空缓存
+
+[root@server0 ~]# yum repolist 
+[root@server0 ~]# yum repolist 
+
+4.查询仓库中是否有该软件
+[root@server0 ~]# yum list firefox
+
+###################################################
+请写出Yum客户端配置文件路径，以及文件内容具体的字段
+        /etc/yum.repos.d/*.repo
+        []、name、baseurl、enabled、gpgcheck
+
+###################################################
+分区规划及使用
+扇区默认的大小为512字节
+
+一块硬盘的“艺术”之旅
+• 识别硬盘 => 分区规划 => 格式化 => 挂载使用
+    毛坯楼层 => 打隔断 => 装修 =>  入驻
+
+一 识别硬盘,vd代表虚拟化设备
+[root@server0 ~]# lsblk
+NAME   MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+vda    253:0    0  10G  0 disk 
+└─vda1 253:1    0  10G  0 part /
+vdb    253:16   0  10G  0 disk 
+
+[root@server0 ~]# ls /dev/vdb    #查看设备文件
+
+二 分区的规划                                           
+    分区模式：  MBR 主引导记录模式 
+    最大的空间支持2.2TB
+    最多有4个主分区,或者 3个主分区+1个扩展分区(n个逻辑分区）
+
+  GPT：最大的空间支持18EB
+         1EB=1024PB
+         1PB=1024TB
+
+使用fdisk分区工具
+[root@server0 ~]# fdisk /dev/vdb 
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +2G
+  p 查看分区表
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +1G
+  d 删除分区
+  w 保存并退出 
+
+[root@server0 ~]# lsblk 
+
+三 分区格式化
+
+  格式化：赋予空间文件系统的过程
+  文件系统：存储数据的规则
+
+ Windows：  FAT    NTFS
+
+ Linux： ext4（RHEL6）   xfs（RHEL7）
+
+[root@server0 ~]# mkfs.ext4 /dev/vdb1  #格式化文件系统为ext4
+[root@server0 ~]# blkid /dev/vdb1      #查看设备文件系统类型
+
+[root@server0 ~]# mkfs.xfs /dev/vdb2  #格式化文件系统为xfs
+[root@server0 ~]# blkid /dev/vdb2     #查看设备文件系统类型
+
+四  挂载使用
+[root@server0 ~]# mkdir /mypart1
+[root@server0 ~]# mount /dev/vdb1  /mypart1
+[root@server0 ~]# df -h    #显示正在挂载使用的设备信息
+
+[root@server0 ~]# mkdir /mypart2
+[root@server0 ~]# mount /dev/vdb2  /mypart2
+[root@server0 ~]# df -h 
+
+五  开机自动挂载配置文件 /etc/fstab             
+
+– 设备路径      挂载点        文件系统类型      参数       备份标记      检测顺序
+[root@server0 ~]# vim  /etc/fstab
+/dev/vdb1   /mypart1   ext4   defaults  0 0 
+/dev/vdb2   /mypart2   xfs    defaults  0 0
+
+[root@server0 ~]# umount /mypart1
+[root@server0 ~]# umount /mypart2
+[root@server0 ~]# df -h
+
+[root@server0 ~]# mount -a
+   检测/etc/fstab开机自动挂载配置文件,格式是否正确
+   检测/etc/fstab中,书写完成,但当前没有挂载的设备,进行挂载
+[root@server0 ~]# df -h
+
+六 综合分区
+[root@server0 ~]# fdisk /dev/vdb
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +1G
+   p 查看分区表
+   n 创建扩展分区 
+          ----->回车---->起始回车----->结束回车   将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+1G
+   n 创建逻辑分区----->起始回车------>结束+1G
+   n 创建逻辑分区----->起始回车------>结束+1G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# partprobe   #刷新分区表
+[root@server0 ~]# lsblk 
+######################################################
+总结：
+  1.识别硬盘   lsblk
+  2.分区的规划    fdisk    MBR分区模式
+  3.刷新分区表    partprobe
+  4.格式化文件系统    mkfs.ext4  mkfs.xfs   blkid
+  5.挂载使用  mount /etc/fstab    mount -a  df -h
+######################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

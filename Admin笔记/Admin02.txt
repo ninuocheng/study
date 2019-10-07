@@ -1,0 +1,329 @@
+Linux系统简介
+
+Linux是一种操作系统,让计算机硬件正常工作
+
+Unix/Linux发展史
+• UNIX诞生,1970-1-1
+
+Linux的诞生                                             
+• Linux之父,Linus Torwalds
+
+ 内核：调配硬件资源
+– 标准读音:“哩呐科斯”
+
+• 由Linus率领的内核项目团队统一发布
+– 内核作用:管理CPU/内存、驱动基本硬件、文件系统
+– 版本号:主版本.次版本.修订号
+
+######################################################
+Linux发行版本
+• 发行版的名称/版本由发行方决定
+– Red Hat Enterprise Linux 5/6/7
+– Suse Linux Enterprise 12
+– Debian Linux 7.8
+– Ubuntu Linux 14.10/15.04
+
+
+Red Hat系列版本
+• 红帽 Linux 企业版
+– 简称RHEL(Red Hat Enterprise Linux)
+– http://www.redhat.com/
+
+• Fedora Core 社区版
+– http://fedoraproject.org/
+
+• CentOS,社区企业操作系统
+– Community Enterprise Operating System
+– http://www.centos.org/
+
+#####################################################
+安装Linux系统
+安装CentOS7必须要2G内存以上
+
+Ctrl+Alt=鼠标回到真机
+
+系统的语言选择中文
+软件包选择：带GUI的服务器（安装图形环境）
+安装位置：选择自动分区
+设置root密码，以及创建普通用户
+
+########################################################
+预备知识
+
+一 Linux目录结构                                                  
+   / 根目录：所有的数据都在此目录下（Linux系统的起点）
+   路径：/dev/nsd/1.txt
+
+  /dev：存放设备（硬盘或键盘或显示器或鼠标.....）相关的数据
+
+    哲学：一切皆文件
+
+二 磁盘表示方法
+
+  hd,表示IDE设备
+  sd,表示SCSI设备
+ 
+  /dev/hda    #表示第一块，IDE设备
+  /dev/hdb    #表示第二块，IDE设备
+  /dev/hdc    #表示第三块，IDE设备
+
+  /dev/sda    #表示第一块，SCSI设备
+  /dev/sdb    #表示第二块，SCSI设备
+  /dev/sdc    #表示第三块，SCSI设备
+
+######################################################
+获取命令行界面
+• 虚拟控制台切换( Ctrl + Alt + Fn 组合键)
+– tty1:图形桌面
+– tty2~tty6:字符控制台
+
+• 图形获取命令行：鼠标右击空白处---》打开终端
+• 命令行提示标识的含义
+– [当前用户@主机名 当前所在位置]$
+– 若当前用户是root,则最后一个字符为 #
+[root@svr7 桌面]#
+– 否则,最后一个字符为 $
+[teacher@svr7 桌面]$
+#####################################################
+
+查看及切换目录
+• pwd — Print Working Directory
+– 用途:查看当前所在的位置
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd [目标文件夹位置]
+
+• ls — List
+– 格式:ls [选项]... [目录或文件名]...
+    蓝色：目录
+    黑色：文本文件
+    青色：快捷方式
+
+[root@localhost ~]# pwd           #显示当前所在位置
+[root@localhost ~]# cd  /         #切换到根目录
+[root@localhost /]# pwd
+[root@localhost /]# ls            #显示当前目录下内容
+
+[root@localhost /]# cd  /etc/      #切换到/etc目录
+[root@localhost etc]# pwd
+[root@localhost etc]# ls
+
+[root@localhost /]# cd  /boot/    #切换到/boot目录
+[root@localhost boot]# pwd
+[root@localhost boot]# ls
+
+[root@localhost /]# cd  /root     #切换到/root目录
+[root@localhost ~]# pwd
+[root@localhost ~]# ls
+######################################################
+[root@localhost /]# ls  /root
+[root@localhost /]# ls  /home/
+[root@localhost /]# ls  /home/   /root   /opt/
+ 绝对路径：以根目录开始的路径
+ 相对路径：以当前路径为参照的路径
+[root@localhost /]# cd  /etc/pki/
+[root@localhost pki]# pwd
+[root@localhost pki]# ls
+[root@localhost pki]# cd /etc/pki/CA    #利用绝对路径
+[root@localhost CA]# pwd
+
+[root@localhost CA]# cd /etc/pki/
+[root@localhost pki]# pwd
+[root@localhost pki]# ls
+[root@localhost pki]# cd   CA        #利用相对路径
+[root@localhost CA]# pwd
+#######################################################
+  .. :上一级目录
+  
+后退或返回上一级目录：cd ..
+
+[root@localhost /]# cd /etc/pki/CA
+[root@localhost CA]# cd  ..
+[root@localhost pki]# pwd
+/etc/pki
+[root@localhost pki]# cd  ..
+[root@localhost etc]# pwd
+/etc
+[root@localhost etc]# cd  ..
+[root@localhost /]# pwd
+
+#######################################################
+查看文本文件内容
+[root@localhost /]# cat /root/anaconda-ks.cfg
+[root@localhost /]# cat /etc/passwd
+[root@localhost /]# cat /etc/hosts
+[root@localhost /]# cat /etc/fstab
+[root@localhost /]# cat /etc/group
+
+[root@localhost /]# cat /etc/redhat-release  #查看系统版本
+CentOS Linux release 7.5.1804 (Core)
+
+#######################################################
+• 真机列出CPU处理器信息
+[student@room9pc01 ~]$ lscpu
+........
+CPU(s):                4    #CPU核心数
+........
+型号名称：        Intel(R) Core(TM) i5-4430S CPU @ 2.70GHz
+........
+
+• 真机检查内存大小、空闲情况
+[student@room9pc01 ~]$ cat /proc/meminfo 
+MemTotal:       16330736 kB     #内存总共的大小
+........
+
+#######################################################
+虚拟机查看主机名和IP信息
+• 虚拟机列出当前系统的主机名称
+[root@localhost /]# hostname
+localhost.localdomain
+[root@localhost /]# hostname A.tedu.cn   #临时设置主机名
+[root@localhost /]# hostname
+[root@localhost /]# exit         #关闭当前的终端
+
+• 虚拟机列出已激活的网卡连接信息
+[root@A ~]# ifconfig  eth0  192.168.1.10  #临时设置IP地址
+[root@A ~]# ifconfig           #查看网卡的IP地址信息
+ eth0：第一张网卡
+ lo：本地回环接口    127.0.0.1永远代表自己
+
+[root@A ~]# ping 127.0.0.1
+ 按 Ctrl +c 结束正在运行的命令
+######################################################
+永久设置主机名
+  字体放大：Ctrl  shift  + 
+  字体放小：Ctrl  -
+
+[root@A ~]# nmtui
+修改主机名：设置系统主机名--->输入新的名字--->确定--->确定
+
+新开一个全新的终端查看提示符的变化
+[root@abc ~]# hostname
+abc.tedu.cn
+
+永久设置IP地址/子网掩码/网关地址/DNS地址           
+[root@abc ~]# ifdown eth0   #禁用eth0网卡 ,让临时设置失效
+成功断开设备 'eth0'。
+[root@abc ~]# ifup eth0     #激活eth0网卡
+
+[root@abc ~]# nmtui   #进行永久的设置
+[root@abc ~]# nmtui
+　编辑连接 -->eth0-->编辑ipv4-->显示-->将  自动  修改为  手动
+　-->按空格　勾选　自动连接    　    #每次开机自动生效
+　-->按空格　勾选　对所有用户有效  
+
+激活配置
+[root@abc ~]# nmtui
+　启用连接 -->eth0-->敲回车　禁用-->敲回车　激活
+　最终eth0前面有一个＊代表激活状态
+[root@abc ~]# ifconfig
+######################################################
+创建目录
+• mkdir — Make Directory
+– 格式:mkdir  [/路径/]目录名...
+
+[root@abc ~]# mkdir /opt/nsd01   #指定路径下创建目录nsd01
+[root@abc ~]# ls /opt/
+
+[root@abc ~]# ls /opt/nsd01   #默认创建目录为空目录
+[root@abc ~]# mkdir  nsd02    #在当前路径下创建目录nsd02
+[root@abc ~]# pwd
+[root@abc ~]# ls
+
+[root@abc ~]# mkdir /root/nsd03  /opt/nsd04  /mnt/nsd05 
+[root@abc ~]# ls /root/
+[root@abc ~]# ls /opt/
+[root@abc ~]# ls /mnt/
+
+• touch命令
+– 用途:新建空文件
+– 格式:touch 文件名...
+[root@abc ~]# touch /root/1.txt
+[root@abc ~]# ls /root/
+[root@abc ~]# touch /opt/2.txt  /mnt/3.txt
+[root@abc ~]# ls /opt/
+[root@abc ~]# ls /mnt/
+
+文本内容操作
+• less分屏阅读工具，专用于查看内容较多的文件
+– 优势:支持前后翻页
+• 基本交互操作
+– 按 / 键向后查找(n、N切换)
+[root@abc ~]# less /etc/passwd
+   /root 全文查找root
+   /bin 全文查找bin，按n可以跳转匹配的项
+
+• head、tail 命令
+– 格式:
+  head -n 数字 文件名
+  tail -n 数字 文件名
+
+[root@abc ~]# head -2 /etc/passwd
+[root@abc ~]# head -3 /etc/passwd
+
+[root@abc ~]# tail -1 /etc/passwd
+[root@abc ~]# tail -3 /etc/passwd
+
+[root@abc ~]# head  /etc/passwd   #默认显示头10行
+[root@abc ~]# tail  /etc/passwd   #默认显示尾10行
+
+[root@abc ~]# head -12 /etc/passwd
+
+• grep工具
+– 用途:输出包含指定字符串的行
+#从/etc/passwd文件内容中过滤包含root的行
+]# grep root /etc/passwd  
+]# grep lisi /etc/passwd
+
+]# grep sbin /etc/passwd
+]# grep bash /etc/passwd
+
+#######################################################
+• 关机:poweroff                 
+[root@abc ~]# poweroff
+
+• 重启:reboot
+[root@abc ~]# reboot
+
+#######################################################
+文本编辑器vim
+
+ 当文件不存在的时候，默认创建该文件
+ 三个模式：命令模式     插入模式（输入模式）   末行模式
+
+[root@abc ~]# vim /opt/haha.txt
+
+		命------i键或o键------>插入模式（按Esc回到命令模式）
+		令
+		模
+		式 ------输入 ：  ------> 末行模式（按Esc回到命令模式）
+ 
+    末行模式输入  ：wq    #保存并退出
+    末行模式输入  ：q！   #强制不保存并退出
+
+[root@abc ~]# cat /opt/haha.txt
+#######################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

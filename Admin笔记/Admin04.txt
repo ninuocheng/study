@@ -1,0 +1,435 @@
+请说明下列两次复制有何不同
+[root@A /]# rm -rf /opt/*
+[root@A /]# cp -r /home  /opt/test
+                     将/home复制到/opt重命名为test
+[root@A /]# cp -r /home  /opt/test
+                     将/home复制到/opt/test目录下
+########################################################
+管理用户和组
+   
+    用户： 1.可以登陆系统   2.访问控制
+    组：方便管理用户
+
+   唯一标识： UID   GID
+
+   一个用户必须至少属于一个组
+   组分类：基本组（私有组）     附加组（从属组）
+[root@A /]# useradd harry
+[root@A /]# 组：harry
+                      组：xs   cw   sg  mv  
+
+添加用户
+用户基本信息存放在 /etc/passwd 文件      
+ [root@A /]# head -1 /etc/passwd
+ root:x:0:0:root:/root:/bin/bash
+  用户名:密码占位符:UID:基本组GID:用户描述信息:家目录:解释器程序
+
+• 使用 useradd 命令
+– useradd [选项]... 用户名
+
+• 常用命令选项
+– -u 用户id、-d 家目录路径、-s 登录解释器、-G 附加组
+创建的普通用户默认UID会从1000开始，管理员root的UID为0
+
+[root@A /]# useradd nsd01       #创建用户nsd01
+[root@A /]# ls /home/
+[root@A /]# id nsd01            #查看用户的基本信息
+
+[root@A /]# useradd nsd02
+[root@A /]# id nsd02            #查看用户的基本信息
+  
+[root@A /]# useradd -u 1500 nsd04   #创建用户nsd04指定UID
+[root@A /]# id nsd04            #查看用户的基本信息
+
+
+ -d 家目录路径
+
+[root@A /]# useradd nsd05
+[root@A /]# ls /home/
+[root@A /]# grep nsd05 /etc/passwd
+
+[root@A /]# useradd -d /opt/nsd06  nsd06
+[root@A /]# grep nsd06 /etc/passwd
+[root@A /]# ls /opt/
+
+[root@A /]# useradd -d /mnt/abc  nsd07
+[root@A /]# grep nsd07  /etc/passwd
+[root@A /]# ls /mnt/
+
+
+-s 登录解释器
+
+  /sbin/nologin：禁止用户登陆系统
+[root@A /]# useradd -s /sbin/nologin nsd09
+[root@A /]# grep nsd09 /etc/passwd
+
+[root@A /]# useradd -s /sbin/nologin nsd10
+[root@A /]# grep nsd10 /etc/passwd
+
+    -G 附加组          
+[root@A /]# groupadd stugrp           #创建组
+[root@A /]# useradd -G stugrp  nsd11
+[root@A /]# id nsd11
+        
+[root@A /]# useradd -G stugrp  nsd12
+[root@A /]# id nsd12
+
+#####################################################
+设置登录密码
+用户密码信息存放在 /etc/shadow 文件
+[root@A /]# grep nsd01 /etc/shadow
+nsd01:$6$T/GOva$7pCeaE4H8CycuTmpRnIZo8yY.fyqBaHiF2hJIQKVrJsX/Y641G8lz9c.xcDINdwO2B8Z9jJ3UrTzyXp3RA6a.
+:18142:0:99999:7:::
+
+ 用户名:密码加密后的字符串:上一次修改密码的时间
+                                          自1970-1-1 到达 2019-9-3所经历的天数
+
+
+• 使用 passwd 命令
+– passwd [用户名]
+[root@A /]# passwd nsd01        
+更改用户 nsd01 的密码 。
+新的 密码：
+无效的密码： 密码少于 8 个字符
+重新输入新的 密码：
+passwd：所有的身份验证令牌已经成功更新。
+[root@A /]# su - nsd01         #临时切换用户身份
+
+[nsd01@A ~]$ passwd 
+更改用户 nsd01 的密码 。
+为 nsd01 更改 STRESS 密码。
+（当前）UNIX 密码：                  #输入旧密码
+新的 密码：                                 #新密码
+重新输入新的 密码：                    #重新输入新密码
+passwd：所有的身份验证令牌已经成功更新。
+[nsd01@A ~]$ exit
+
+非交互式设置密码
+格式：echo 密码   |  passwd --stdin 用户
+
+[root@A /]# echo 123456  |  passwd --stdin nsd01
+
+[root@A /]# echo redhat  |  passwd --stdin nsd01
+
+#######################################################
+重定向输出:将前面命令的输出，写入到文本文件
+   >:覆盖重定向
+   >>:追加重定向
+[root@A /]# ls --help  >  /opt/ls.txt 
+[root@A /]# cat  /opt/ls.txt
+
+[root@A /]# head -2 /etc/passwd
+[root@A /]# head -2 /etc/passwd > /opt/ls.txt 
+[root@A /]# cat /opt/ls.txt
+
+[root@A /]# hostname
+[root@A /]# hostname >  /opt/ls.txt 
+[root@A /]# cat /opt/ls.txt
+
+[root@A /]# cat /opt/ls.txt 
+[root@A /]# hostname >> /opt/ls.txt
+[root@A /]# cat /opt/ls.txt
+
+####################################################
+[root@A /]# cat /opt/ls.txt 
+[root@A /]# echo 123456
+123456
+[root@A /]# echo 123456 >> /opt/ls.txt
+[root@A /]# cat /opt/ls.txt
+
+[root@A /]# echo hello  >> /opt/ls.txt
+[root@A /]# cat /opt/ls.txt
+###################################################
+管道  |  ：将前面命令的输出，传递给后面命令，作为后面命令参数继续运行
+
+显示文件/etc/passwd的8到12行内容
+[root@A /]# head -12 /etc/passwd  |  tail -5 
+[root@A /]# head -12 /etc/passwd  |  tail -5  |  cat -n
+
+[root@A /]# cat -n /etc/passwd | head -12 | tail -5
+
+[root@A /]# ifconfig | head -2
+
+[root@A /]# ifconfig  | less
+
+#####################################################
+查看日期时间
+
+[root@A /]# date
+[root@A /]# date
+2019年 09月 03日 星期二 11:48:22 CST
+[root@A /]# date  -s  '2008-10-1   12:12:10'
+2008年 10月 01日 星期三 12:12:10 CST
+[root@A /]# date
+
+[root@A /]# date  -s '2019-9-3  11:52'
+[root@A /]# date
+
+计算器
+[root@A /]# bc                 #加+   减-   乘*   除/
+
+quit   #退出
+
+[root@A /]# echo 1+1  | bc
+[root@A /]# echo 3*2  | bc
+
+#######################################################
+
+修改用户属性
+• 使用 usermod 命令
+– usermod [选项]... 用户名
+
+• 常用命令选项
+– -u 用户id、-d 家目录路径、-s 登录解释器、-G 附加组
+[root@A /]# useradd nsd15
+[root@A /]# id nsd15
+[root@A /]# grep nsd15 /etc/passwd
+
+[root@A /]# usermod -u 1600  -d /mnt/nsd15     -s /sbin/nologin -G stugrp  nsd15
+
+[root@A /]# id nsd15
+[root@A /]# grep nsd15 /etc/passwd
+
+删除用户                                                           
+• 使用 userdel 命令
+– userdel  用户名
+– userdel -r 用户名    #连同家目录一并删除
+
+[root@A /]# userdel nsd01
+[root@A /]# id nsd01
+id: nsd01: no such user
+
+#######################################################
+添加组
+组基本信息存放在 /etc/group 文件
+[root@A /]# grep tarena  /etc/group
+ tarena:x:1512:
+  组名:密码占位符:组的GID:组的成员列表
+
+• 使用 groupadd 命令
+– groupadd [-g 组ID] 组名
+[root@A /]# groupadd tarena
+[root@A /]# grep tarena  /etc/group
+tarena:x:1512:
+[root@A /]# useradd kaka
+[root@A /]# useradd kenji
+[root@A /]# useradd dc
+[root@A /]# useradd ch
+
+管理组成员
+组成员信息存放在 /etc/gshadow 文件，组密码信息
+• 使用 gpasswd 命令
+– gpasswd -a 用户名  组名
+– gpasswd -d 用户名  组名
+
+[root@A /]# grep tarena /etc/group
+[root@A /]# gpasswd -a kenji tarena  #添加kenji用户到tarena组
+[root@A /]# grep tarena /etc/group
+[root@A /]# id kenji
+
+[root@A /]# gpasswd -a kaka tarena  #添加kaka用户到tarena组
+[root@A /]# grep tarena  /etc/group
+
+[root@A /]# gpasswd -a dc tarena    #添加dc用户到tarena组
+[root@A /]# grep tarena /etc/group
+
+[root@A /]# gpasswd -d kaka  tarena #从tarena组中删除kaka用户
+[root@A /]# grep tarena /etc/group
+
+[root@A /]# gpasswd -a ch tarena   #添加ch用户到tarena组
+[root@A /]# grep tarena /etc/group
+
+删除组
+• 使用 groupdel 命令
+– groupdel 组名
+
+[root@A /]# groupdel tarena
+[root@A /]# grep tarena /etc/group
+######################################################
+案例1:配置用户和组账号
+• 新建用户 alex,其用户ID为3456,密码是flectrag
+[root@A /]# useradd  -u  3456  alex
+[root@A /]# echo  flectrag  |  passwd  --stdin   alex
+• 一个名为 adminuser 的组
+[root@A /]# groupadd adminuser
+[root@A /]# grep adminuser /etc/group
+• 一个名为 natasha的用户,其属于 adminuser 组,这个组是该用户的从属组
+[root@A /]# useradd -G adminuser natasha
+[root@A /]# id natasha
+• 一个名为 harry 的用户,其属于 adminuser 组,这个组是该用户的从属组
+[root@A /]# useradd -G adminuser harry
+[root@A /]# id harry
+• 一个名为 sarah 的用户,其在系统中没有可交互的Shell,并且不是 adminuser 组的成员
+[root@A /]# useradd -s /sbin/nologin sarah
+• natasha、harry、sarah 的密码都要设置为 flectrag
+
+######################################################
+tar备份与恢复，制作压缩包                            
+
+ 作用：  1.整合分散的文件      2.减少占用的空间
+
+Linux独有的压缩格式：
+     gzip -----> .gz 
+     bzip2 -----> .bz2  
+     xz -----> .xz  
+
+tar工具的常用选项
+• tar 集成备份工具
+– -c:创建归档
+– -x:释放归档
+– -f:指定归档文件名称,必须放在所有选项最后
+– -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+– -t:显示归档中的文件清单
+– -C（大写）:指定释放路径
+
+打包，制作tar包
+  格式：  tar  选项     /路径/压缩包的名字      /路径/源文件 ........
+
+]# tar -zcf /opt/abc.tar.gz   /home/   /etc/passwd 
+]# ls /opt/
+
+]# tar -jcf /opt/nsd.tar.bz2  /home/  /etc/passwd
+]# ls /opt/
+
+]# tar -Jcf /opt/stu.tar.xz   /home/  /etc/passwd
+]# ls /opt/
+
+    -z：表示利用gzip进行压缩
+    -j：表示利用bzip2进行压缩
+    -J：表示利用xz进行压缩
+
+
+解包
+  格式： tar   选项     /路径/压缩包的名字    -C  /释放的路径 
+[root@A /]# mkdir /nsd01
+[root@A /]# tar -xf /opt/abc.tar.gz  -C  /nsd01
+[root@A /]# ls /nsd01/
+[root@A /]# ls /nsd01/etc/
+[root@A /]# ls /nsd01/home/
+
+[root@A /]# mkdir /nsd02
+[root@A /]# tar -xf /opt/nsd.tar.bz2  -C /nsd02
+[root@A /]# ls /nsd02
+[root@A /]# ls /nsd02/etc/
+[root@A /]# ls /nsd02/home/
+
+[root@A /]# mkdir /nsd03
+[root@A /]# tar -xf /opt/stu.tar.xz  -C /nsd03
+[root@A /]# ls /nsd03
+[root@A /]# ls /nsd03/etc/
+[root@A /]# ls /nsd03/home/
+
+案例2:创建一个备份包                                             
+使用 tar 工具完成以下备份任务:
+– 创建一个名为 /root/backup.tar.bz2 的归档文件
+– 其中包含 /usr/local 目录中的内容
+– tar 归档必须使用 bzip2 进行压缩
+
+[root@A /]# tar -jcf /root/backup.tar.bz2    /usr/local/
+[root@A /]# ls /root/
+
+[root@A /]# tar -tf /root/backup.tar.bz2  #查看tar包的内容
+
+#######################################################
+cron计划任务，周期性任务
+cron任务概述
+• 用途:按照设置的时间间隔为用户反复执行某一项固
+定的系统任务
+
+• 软件包:cronie、crontabs
+• 系统服务:crond
+• 日志（日记）文件:/var/log/crond
+
+• 使用 crontab 命令
+– 编辑:crontab -e [-u 用户名]    #调用vim文本编辑器
+– 查看:crontab -l [-u 用户名]
+– 清除:crontab -r [-u 用户名]
+
+如何编写crontab任务记录
+–   分   时   日   月   周     任务命令行(绝对路径)
+     *     *    *    *     *     #每分钟均执行一次
+     30   8    *    *     *     #每天早上的8：30分执行一次
+     30   23    *    *     *     #每天晚上的11：30分执行一次
+
+     30   23    *    *     5      #每周的周五晚上的11：30分执行一次
+     30   23    *    *     1-3   #每周的周一至周三 晚上的11：30分执行一次
+
+     30   23    1    *     1      # 满足其中一个即可
+
+     30   23    *    *     1,3,5   #每周的周一,周三，周五 晚上的11：30分执行一次
+
+     30  */2    *    *     *       #每个两个小时执行一次
+
+	*:匹配范围内任意时间
+	,:分隔多个不连续的时间点
+	-:指定连续时间范围
+	/n:指定时间频率,每n ...
+
+  每分钟记录当前系统的时间，写入到/opt/time.txt
+ 
+[root@A /]# date
+[root@A /]# date >> /opt/time.txt
+[root@A /]# cat /opt/time.txt
+[root@A /]# crontab -e               #编写计划任务
+* * * * *  date >> /opt/time.txt
+
+[root@A /]# crontab -l               #显示当前用户的计划任务
+* * * * *  date >> /opt/time.txt
+
+[root@A /]# cat /opt/time.txt
+[root@A /]# cat /opt/time.txt
+[root@A /]# cat /opt/time.txt
+
+#####################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
