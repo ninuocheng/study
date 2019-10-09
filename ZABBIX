@@ -1,0 +1,14 @@
+zabbix是提供监控服务的软件
+监控的数据存储到MySQL
+nginx提供网站服务
+zabbixweb页面是PHP写的
+部署LNMP
+安装nginx及其依赖包
+yum -y install gcc pcre-devel zlib-devel数据压缩 openssl-devel提供加密模块的软件
+tar -xf nginx-1.12.tar.gz
+cd nginx-1.12
+./configure --with-http_ssl_module  提供数据加密传输
+make && make install
+yum -y install php 解释PHP代码的 php-mysql php用来连接mysql提供命令的软件 mariadb mariadb-devel mariadb-server
+yum -y install php-fpm 管理php程序
+
