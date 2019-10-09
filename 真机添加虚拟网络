@@ -1,0 +1,9 @@
+真机添加虚拟网络
+[root@room9pc01 networks]#cd /etc/libvirt/qemu/networks
+[root@room9pc01 networks]#cp -a default.xml 虚拟网络名.xml
+[root@room9pc01 networks]#vim 网卡名.xml(dd掉uuid行和mac address行)
+[root@room9pc01 networks]#virsh net-define 虚拟网卡名.xml
+[root@room9pc01 networks]#virsh
+[root@room9pc01 networks]#net-start 虚拟网络名.xml
+[root@room9pc01 networks]#net-autostart 虚拟网络名.xml
+最后将虚拟网路'虚拟网络名.xml'应用到虚拟接口
