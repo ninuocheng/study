@@ -1,0 +1,24 @@
+#!/bin/bash
+function a {
+echo -e "\033[$1m$2\033[0m"
+}
+a 30 ABCD
+a 31 ABCD
+a 32 ABCD
+a 33 ABCD
+a 34 ABCD
+a 35 ABCD
+a 36 ABCD
+a 37 ABCD
+a 38 ABCD
+a 39 ABCD
+a 40 ABCD
+a 41 ABCD
+a 42 ABCD
+a 43 ABCD
+a 44 ABCD
+a 45 ABCD
+a 46 ABCD
+a 47 ABCD
+a 48 ABCD
+a 49 ABCD
